@@ -3,21 +3,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { backendUrl } from "@/config";
 import axios from "axios";
-import { Play, StopCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import ConfirmDialog from "@/components/common/confirm-dialog";
 
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-} from "@/components/ui/alert-dialog";
-import { CheckCircle } from "lucide-react";
 function VideoRecorder({ uuid, doctor }) {
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [progressMessage, setProgressMessage] = useState("");
@@ -174,7 +162,6 @@ function VideoRecorder({ uuid, doctor }) {
       try {
         await axios.post(`${backendUrl}doctors/record/${uuid}`, formData);
         toast.success("Video uploaded successfully");
-        setShowSuccessDialog(true);
         setProgressMessage("Video uploaded successfully");
       } catch (error) {
         console.error("❌ Upload error:", error);
@@ -231,19 +218,15 @@ function VideoRecorder({ uuid, doctor }) {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col items-center justify-center text-center px-4">
+    <div className="">
       <canvas ref={canvasRef} style={{ display: "none" }} />
-
-      <div className="flex justify-center mb-4">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          className="h-64 max-w-lg w-full bg-black rounded shadow-md"
-        ></video>
-      </div>
-
-      {/* <div className="flex gap-4">
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        className="w-full h-64 bg-black mb-4"
+      ></video>
+      <div className="flex gap-4">
         <button
           onClick={handleStartRecording}
           disabled={isRecording}
@@ -258,93 +241,30 @@ function VideoRecorder({ uuid, doctor }) {
         >
           Finish
         </button>
-      </div> */}
-      <div className="flex gap-4 mt-2">
-        <button
-          onClick={handleStartRecording}
-          disabled={isRecording}
-          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors duration-200 
-      ${
-        isRecording
-          ? "bg-green-300 cursor-not-allowed"
-          : "bg-green-700 hover:bg-green-800 focus:ring-2 focus:ring-green-500 focus:outline-none"
-      }`}
-        >
-          <Play size={16} />
-          Start Recording
-        </button>
-
-        <button
-          onClick={handleStopRecording}
-          disabled={!isRecording}
-          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors duration-200 
-      ${
-        !isRecording
-          ? "bg-red-300 cursor-not-allowed"
-          : "bg-red-700 hover:bg-red-800 focus:ring-2 focus:ring-red-500 focus:outline-none"
-      }`}
-        >
-          <StopCircle size={16} />
-          Finish & Upload
-        </button>
+        {doctor?.filepath && doctor?.filepath.length > 0 ? (
+          <button
+            onClick={confirmDelete}
+            disabled={isRecording}
+            className="px-4 py-2 bg-gray-500 text-white rounded"
+          >
+            Delete Video
+          </button>
+        ) : null}
       </div>
-
       {isRecording && (
         <div className="mt-4 text-xl font-bold">Timer: {formatTime(timer)}</div>
       )}
-      {/* {progressMessage && (
+      {progressMessage && (
         <div className="mt-4 text-xl font-bold">{progressMessage}</div>
-      )} */}
+      )}
 
-      {/* <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <div className="flex items-center gap-3">
-              <CheckCircle className="text-green-600" size={32} />
-              <div>
-                <AlertDialogTitle className="text-green-900 text-xl font-semibold">
-                  Video Uploaded Successfully!
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-green-700 mt-1">
-                  Thank you! Your video has been recorded and uploaded. You may
-                  now safely close this page.
-                </AlertDialogDescription>
-              </div>
-            </div>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <button
-              onClick={() => setShowSuccessDialog(false)}
-              className="btn btn-green"
-            >
-              OK
-            </button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog> */}
-      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <div className="flex items-center gap-3">
-              <CheckCircle size={32} />
-              <div>
-                <AlertDialogTitle className="text-lg font-semibold">
-                  Video Uploaded Successfully!
-                </AlertDialogTitle>
-                <AlertDialogDescription className="mt-1 text-sm text-muted-foreground">
-                  Thank you! Your video has been recorded and uploaded. You may
-                  now safely close this page.
-                </AlertDialogDescription>
-              </div>
-            </div>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button onClick={() => setShowSuccessDialog(false)} className="btn">
-              OK
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        isOpen={showConfirmation}
+        title="Confirm Deletion"
+        description="Are you sure you want to delete this video? This action cannot be undone."
+        onCancel={() => setShowConfirmation(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

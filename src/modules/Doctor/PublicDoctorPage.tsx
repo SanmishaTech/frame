@@ -57,26 +57,19 @@ const PublicDoctorPage = () => {
   }
 
   return (
-    <div className="bg-[#f9fafb] py-4 px-4">
-      {" "}
-      {/* reduced py-8 to py-4 */}
-      <div className="max-w-6xl mx-auto">
+    <div className="bg-[#f9fafb] py-4 px-4 min-h-screen flex justify-center items-center">
+      <div className="max-w-4xl w-full">
         <Card className="shadow-2xl border border-gray-200 bg-white dark:bg-zinc-900">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold text-primary flex justify-center items-center gap-2">
               <UserRound className="text-primary" size={28} />
-              Welcome, Dr. {doctor.name}
+              Welcome, Dr. {doctor.name} {`(${doctor.degree})`}
             </CardTitle>
-
             <p className="text-muted-foreground mt-1 text-sm">
-              {" "}
-              {/* reduced mt-2 to mt-1 */}
-              Please record and submit a brief 1-minute video introduction on
-              the given topic by following the instructions on this page
+              Please record and submit a brief video on the given topic by
+              following the instructions on this page.
             </p>
             <div className="mt-2 flex justify-center items-center gap-2 text-sm text-red-600 font-medium">
-              {" "}
-              {/* mt-3 → mt-2 */}
               <ShieldCheck size={18} className="text-red-500" />
               <span>
                 Important: Please do not share this link with anyone. It is
@@ -88,95 +81,46 @@ const PublicDoctorPage = () => {
           <Separator />
 
           <CardContent className="mt-4">
-            {" "}
-            {/* mt-6 → mt-4 */}
-            <div className="flex flex-col md:flex-row gap-4">
-              {" "}
-              {/* gap-6 → gap-4 */}
-              {/* Left: Doctor Info */}
-              {/* Left: Doctor Info */}
-              <div className="w-full md:w-1/2 pr-0 md:pr-6 space-y-6">
-                {/* Main heading */}
-                <h2 className="text-2xl font-bold text-secondary-foreground flex items-center gap-2">
-                  <CircleDot className="text-blue-500" size={24} />
-                  Doctor Information
-                </h2>
-
-                {/* Personal Details Section */}
-                <section className="space-y-4">
-                  <h3 className="text-xl font-semibold text-secondary-foreground">
-                    Personal Details
-                  </h3>
-
-                  <div className="flex items-center gap-3">
-                    <UserRound className="text-sky-600" size={20} />
-                    <span className="font-semibold text-sm text-muted-foreground min-w-[80px]">
-                      Name:
-                    </span>
-                    <span className="font-medium text-base">{doctor.name}</span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Mail className="text-emerald-600" size={20} />
-                    <span className="font-semibold text-sm text-muted-foreground min-w-[80px]">
-                      Email:
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {doctor.email}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Phone className="text-orange-500" size={20} />
-                    <span className="font-semibold text-sm text-muted-foreground min-w-[80px]">
-                      Mobile:
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {doctor.mobile}
-                    </span>
-                  </div>
-                </section>
-
-                {/* Specialty Details Section */}
-                <section className="space-y-4">
-                  <h3 className="text-xl font-semibold text-secondary-foreground">
-                    Specialty Details
-                  </h3>
-
-                  <div className="flex items-center gap-3">
-                    <HeartPulse className="text-rose-500" size={20} />
-                    <span className="font-semibold text-sm text-muted-foreground min-w-[80px]">
-                      Specialty:
-                    </span>
-                    <Badge variant="outline" className="capitalize text-xs">
-                      {doctor.specialty}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <BookOpenText className="text-purple-600" size={20} />
-                    <span className="font-semibold text-sm text-muted-foreground min-w-[80px]">
-                      Topic:
-                    </span>
-                    <Badge className="bg-primary text-white text-xs capitalize">
-                      {doctor.topic}
-                    </Badge>
-                  </div>
-                </section>
+            <div className="w-full space-y-3">
+              <h3 className="text-xl font-semibold text-secondary-foreground flex items-center gap-2">
+                <VideoIcon className="text-red-500" size={22} />
+                Record Your Video Message
+              </h3>
+              <div className="mb-6 p-4 rounded-md bg-yellow-100 border border-yellow-300 text-yellow-900 text-sm">
+                <h4 className="font-semibold text-base mb-2 flex items-center gap-2">
+                  <CircleDot className="text-yellow-700" size={18} />
+                  Instructions for Recording Your Video
+                </h4>
+                <ol className="list-decimal pl-5 space-y-2">
+                  <li>
+                    Click the <strong>Start</strong> button to begin recording.
+                  </li>
+                  <li>
+                    When prompted, allow your browser to access your{" "}
+                    <strong>camera</strong> and <strong>microphone</strong>.
+                  </li>
+                  <li>
+                    Your video recording will begin immediately after
+                    permissions are granted.
+                  </li>
+                  <li>
+                    Click the <strong>Finish</strong> button to stop the
+                    recording and upload the video.
+                  </li>
+                  <li>
+                    If you click <strong>Start</strong> again, your previous
+                    video will be <strong>deleted</strong> and a new recording
+                    will begin.
+                  </li>
+                  <li>
+                    Wait for the upload to complete. A success message will be
+                    shown once it's done.
+                  </li>
+                </ol>
               </div>
-              {/* Vertical separator */}
-              <div className="hidden md:block w-px bg-gray-200"></div>
-              {/* Right: Video Recorder */}
-              <div className="w-full md:w-1/2 space-y-3">
-                {" "}
-                {/* space-y-4 → space-y-3 */}
-                <h3 className="text-xl font-semibold text-secondary-foreground flex items-center gap-2">
-                  <VideoIcon className="text-red-500" size={22} />
-                  Record Your Video Message
-                </h3>
-                <div className="rounded-lg border border-muted p-4 bg-muted">
-                  <VideoRecorder uuid={uuid} doctor={doctor} />
-                </div>
+
+              <div className="rounded-lg border border-muted p-4 bg-muted">
+                <VideoRecorder uuid={uuid} doctor={doctor} />
               </div>
             </div>
           </CardContent>
