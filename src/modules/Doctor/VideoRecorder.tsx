@@ -29,33 +29,77 @@ function VideoRecorder({ uuid, doctor }) {
     },
   });
 
-  // Start recording
+  // // Start recording
+  // const startRecordingStream = async () => {
+  //   setIsRecording(true);
+  //   setProgressMessage("");
+  //   recordedChunks.current = [];
+
+  //   const stream = await navigator.mediaDevices.getUserMedia({
+  //     video: true,
+  //     audio: true,
+  //   });
+  //   videoRef.current.srcObject = stream;
+
+  //   mediaRecorderRef.current = new MediaRecorder(stream, {
+  //     mimeType: "video/webm",
+  //   });
+
+  //   mediaRecorderRef.current.ondataavailable = (event) => {
+  //     if (event.data.size > 0) {
+  //       recordedChunks.current.push(event.data);
+  //     }
+  //   };
+
+  //   mediaRecorderRef.current.start(); // no timeslice: gather all data
+
+  //   timerRef.current = setInterval(() => {
+  //     setTimer((prev) => prev + 1);
+  //   }, 1000);
+  // };
   const startRecordingStream = async () => {
-    setIsRecording(true);
-    setProgressMessage("");
-    recordedChunks.current = [];
+    // ✅ Check browser support for MediaRecorder and WebM format
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported("video/webm")) {
+      toast.error("Your browser doesn't support video recording with WebM.");
+      return;
+    }
+    try {
+      setIsRecording(true);
+      setProgressMessage("");
+      recordedChunks.current = [];
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-    videoRef.current.srcObject = stream;
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
 
-    mediaRecorderRef.current = new MediaRecorder(stream, {
-      mimeType: "video/webm",
-    });
-
-    mediaRecorderRef.current.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        recordedChunks.current.push(event.data);
+      if (!MediaRecorder) {
+        toast.error("MediaRecorder is not supported in this browser.");
+        return;
       }
-    };
+      videoRef.current.srcObject = stream;
 
-    mediaRecorderRef.current.start(); // no timeslice: gather all data
+      mediaRecorderRef.current = new MediaRecorder(stream, {
+        mimeType: "video/webm",
+      });
 
-    timerRef.current = setInterval(() => {
-      setTimer((prev) => prev + 1);
-    }, 1000);
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedChunks.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.start();
+
+      timerRef.current = setInterval(() => {
+        setTimer((prev) => prev + 1);
+      }, 1000);
+    } catch (error) {
+      toast.error("Failed to access camera or microphone.");
+      setIsRecording(false);
+      setProgressMessage("");
+      console.error("❌ Error starting recording:", error);
+    }
   };
 
   // Stop recording and upload
@@ -66,7 +110,11 @@ function VideoRecorder({ uuid, doctor }) {
     setProgressMessage("Processing video...");
 
     mediaRecorderRef.current.stop();
-    videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+    // videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+    if (videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
     clearInterval(timerRef.current);
     setTimer(0);
 
@@ -126,6 +174,13 @@ function VideoRecorder({ uuid, doctor }) {
     navigator.mediaDevices.enumerateDevices().then((devices) => {
       console.log("Available media devices:", devices);
     });
+
+    return () => {
+      clearInterval(timerRef.current);
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      }
+    };
   }, []);
 
   return (

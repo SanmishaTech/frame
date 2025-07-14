@@ -71,10 +71,9 @@ const PublicDoctorPage = () => {
             <p className="text-muted-foreground mt-1 text-sm">
               {" "}
               {/* reduced mt-2 to mt-1 */}
-              This is your personal profile page. Please review your information
-              and record a video message.
+              Please record and submit a brief 1-minute video introduction on
+              the given topic by following the instructions on this page
             </p>
-
             <div className="mt-2 flex justify-center items-center gap-2 text-sm text-red-600 font-medium">
               {" "}
               {/* mt-3 → mt-2 */}
