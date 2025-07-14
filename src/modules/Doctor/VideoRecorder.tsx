@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { backendUrl } from "@/config";
 import axios from "axios";
-import { Play, StopCircle } from "lucide-react";
+import { Play, StopCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -14,24 +14,18 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle } from "lucide-react";
+
 function VideoRecorder({ uuid, doctor }) {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [progressMessage, setProgressMessage] = useState("");
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const timerRef = useRef(null);
-  const recordedChunks = useRef([]);
+  const streamRef = useRef(null);
   const queryClient = useQueryClient();
-  const canvasRef = useRef(null);
-  const canvasStreamRef = useRef(null);
-  const drawIntervalRef = useRef(null);
 
-  // Delete previous video
   const deleteVideoMutation = useMutation({
     mutationFn: (uuid) =>
       axios.delete(`${backendUrl}doctors/record/${uuid}/delete`),
@@ -40,174 +34,112 @@ function VideoRecorder({ uuid, doctor }) {
       queryClient.invalidateQueries(["doctor", uuid]);
     },
     onError: (error) => {
-      toast.error(error?.message || "Failed to delete video");
+      toast.error(error?.message || "Failed to delete previous video");
     },
   });
 
-  const startRecordingStream = async () => {
-    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported("video/webm")) {
-      toast.error("Your browser doesn't support video recording with WebM.");
-      return;
-    }
-
-    try {
-      setIsRecording(true);
-      setProgressMessage("");
-      recordedChunks.current = [];
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-
-      const videoTrack = stream.getVideoTracks()[0];
-      const audioTrack = stream.getAudioTracks()[0];
-
-      videoRef.current.srcObject = stream;
-
-      // Set up canvas drawing
-      const videoEl = videoRef.current;
-      const canvasEl = canvasRef.current;
-      const ctx = canvasEl.getContext("2d");
-
-      canvasEl.width = 640;
-      canvasEl.height = 480;
-
-      const drawFrame = () => {
-        ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
-
-        // Bottom overlay background
-        const overlayHeight = 90;
-        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-        ctx.fillRect(
-          0,
-          canvasEl.height - overlayHeight,
-          canvasEl.width,
-          overlayHeight
-        );
-
-        // Text shadow for better visibility
-        ctx.shadowColor = "black";
-        ctx.shadowBlur = 4;
-
-        // Draw doctor name first (smaller, thinner font)
-        const doctorName = `Dr. ${doctor?.name || "Unknown"}, ${
-          doctor?.degree || "degree Unknown"
-        }`;
-        ctx.fillStyle = "white";
-        ctx.font = "400 14px Arial"; // thinner and smaller
-        const nameWidth = ctx.measureText(doctorName).width;
-        const nameX = (canvasEl.width - nameWidth) / 2;
-        const nameY = canvasEl.height - overlayHeight / 2 - 12; // adjust vertical position a little if needed
-        ctx.fillText(doctorName, nameX, nameY);
-
-        // Draw topic below doctor name (a bit bigger, but still thin)
-        const topic = `Topic: ${doctor?.topic || "Topic Unknown"}`;
-        ctx.font = "400 18px Arial"; // thinner and smaller
-        const topicWidth = ctx.measureText(topic).width;
-        const topicX = (canvasEl.width - topicWidth) / 2;
-        const topicY = canvasEl.height - 20;
-        ctx.fillText(topic, topicX, topicY);
-
-        // Reset shadow for next frame
-        ctx.shadowBlur = 0;
-      };
-
-      drawIntervalRef.current = setInterval(drawFrame, 1000 / 30); // 30 FPS
-
-      // Capture canvas video stream and add original audio track
-      const canvasStream = canvasEl.captureStream(30); // 30 FPS
-      if (audioTrack) canvasStream.addTrack(audioTrack); // Add audio from original stream
-      canvasStreamRef.current = canvasStream;
-
-      mediaRecorderRef.current = new MediaRecorder(canvasStream, {
-        mimeType: "video/webm",
-      });
-
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          recordedChunks.current.push(event.data);
-        }
-      };
-
-      mediaRecorderRef.current.start();
-
-      timerRef.current = setInterval(() => {
-        setTimer((prev) => prev + 1);
-      }, 1000);
-    } catch (error) {
-      toast.error("Failed to access camera or microphone.");
-      console.error("❌ Error:", error);
-      setIsRecording(false);
-    }
-  };
-
-  // Stop recording and upload
   const handleStopRecording = () => {
     if (!mediaRecorderRef.current) return;
 
     setIsRecording(false);
     setProgressMessage("Processing video...");
 
+    mediaRecorderRef.current.onstop = async () => {
+      try {
+        await axios.post(`${backendUrl}doctors/record/${uuid}/finish`);
+        toast.success("Video merged successfully");
+        setShowSuccessDialog(true);
+        setProgressMessage("Video merged successfully");
+      } catch (error) {
+        console.error("❌ Merge error:", error);
+        toast.error("Video merge failed");
+        setProgressMessage("Video merge failed");
+      }
+    };
+
     mediaRecorderRef.current.stop();
 
-    // Stop streams
-    if (videoRef.current.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-
-    if (canvasStreamRef.current) {
-      canvasStreamRef.current.getTracks().forEach((track) => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
 
     clearInterval(timerRef.current);
-    clearInterval(drawIntervalRef.current);
     setTimer(0);
-
-    mediaRecorderRef.current.onstop = async () => {
-      const blob = new Blob(recordedChunks.current, { type: "video/webm" });
-
-      const formData = new FormData();
-      formData.append("video", blob, "recorded.webm");
-
-      try {
-        await axios.post(`${backendUrl}doctors/record/${uuid}`, formData);
-        toast.success("Video uploaded successfully");
-        setShowSuccessDialog(true);
-        setProgressMessage("Video uploaded successfully");
-      } catch (error) {
-        console.error("❌ Upload error:", error);
-        toast.error("Video upload failed");
-        setProgressMessage("Video upload failed");
-      }
-    };
   };
 
-  // Start recording after deleting previous
+  const startRecordingStream = async () => {
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported("video/webm")) {
+      toast.error("Your browser doesn't support WebM recording.");
+      return;
+    }
+
+    try {
+      setIsRecording(true);
+      setProgressMessage("");
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      streamRef.current = stream;
+      videoRef.current.srcObject = stream;
+
+      const uploadChunk = async (formData) => {
+        let retries = 3;
+        while (retries > 0) {
+          try {
+            await axios.post(`${backendUrl}doctors/record/${uuid}`, formData);
+            console.log("Chunk uploaded successfully");
+            return;
+          } catch (error) {
+            console.error("❌ Chunk upload error:", error);
+            retries -= 1;
+            if (retries === 0) {
+              toast.error("Failed to upload chunk after multiple attempts.");
+            }
+          }
+        }
+      };
+
+      mediaRecorderRef.current = new MediaRecorder(stream, {
+        mimeType: "video/webm",
+      });
+
+      mediaRecorderRef.current.ondataavailable = async (event) => {
+        if (event.data.size > 0) {
+          const blob = new Blob([event.data], { type: "video/webm" });
+          const formData = new FormData();
+          formData.append("video", blob, "chunk.webm");
+          await uploadChunk(formData);
+        }
+      };
+
+      // Start recording in 3-second chunks
+      mediaRecorderRef.current.start(3000);
+
+      timerRef.current = setInterval(() => {
+        setTimer((prev) => prev + 1);
+      }, 1000);
+    } catch (error) {
+      toast.error("Failed to access camera or microphone.");
+      console.error("❌ Stream error:", error);
+      setIsRecording(false);
+    }
+  };
+
   const handleStartRecording = () => {
     deleteVideoMutation.mutate(uuid, {
       onSuccess: startRecordingStream,
-      onError: (error) => {
+      onError: () => {
         toast.error(
           "Failed to delete previous video. Cannot start new recording."
         );
-        console.error("❌ Delete error:", error);
       },
     });
   };
 
-  // Confirm delete
-  const confirmDelete = () => {
-    setShowConfirmation(true);
-  };
-
-  const handleDelete = () => {
-    deleteVideoMutation.mutate(uuid);
-    setShowConfirmation(false);
-  };
-
-  // Timer format
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
     const seconds = time % 60;
@@ -218,57 +150,35 @@ function VideoRecorder({ uuid, doctor }) {
   };
 
   useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then((devices) => {
-      console.log("Available media devices:", devices);
-    });
-
     return () => {
       clearInterval(timerRef.current);
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col items-center justify-center text-center px-4">
-      <canvas ref={canvasRef} style={{ display: "none" }} />
-
       <div className="flex justify-center mb-4">
         <video
           ref={videoRef}
           autoPlay
           muted
           className="h-64 max-w-lg w-full bg-black rounded shadow-md"
-        ></video>
+        />
       </div>
 
-      {/* <div className="flex gap-4">
-        <button
-          onClick={handleStartRecording}
-          disabled={isRecording}
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          Start
-        </button>
-        <button
-          onClick={handleStopRecording}
-          disabled={!isRecording}
-          className="px-4 py-2 bg-red-500 text-white rounded"
-        >
-          Finish
-        </button>
-      </div> */}
       <div className="flex gap-4 mt-2">
         <button
           onClick={handleStartRecording}
           disabled={isRecording}
           className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors duration-200 
-      ${
-        isRecording
-          ? "bg-green-300 cursor-not-allowed"
-          : "bg-green-700 hover:bg-green-800 focus:ring-2 focus:ring-green-500 focus:outline-none"
-      }`}
+          ${
+            isRecording
+              ? "bg-green-300 cursor-not-allowed"
+              : "bg-green-700 hover:bg-green-800"
+          }`}
         >
           <Play size={16} />
           Start Recording
@@ -278,11 +188,11 @@ function VideoRecorder({ uuid, doctor }) {
           onClick={handleStopRecording}
           disabled={!isRecording}
           className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors duration-200 
-      ${
-        !isRecording
-          ? "bg-red-300 cursor-not-allowed"
-          : "bg-red-700 hover:bg-red-800 focus:ring-2 focus:ring-red-500 focus:outline-none"
-      }`}
+          ${
+            !isRecording
+              ? "bg-red-300 cursor-not-allowed"
+              : "bg-red-700 hover:bg-red-800"
+          }`}
         >
           <StopCircle size={16} />
           Finish & Upload
@@ -292,36 +202,7 @@ function VideoRecorder({ uuid, doctor }) {
       {isRecording && (
         <div className="mt-4 text-xl font-bold">Timer: {formatTime(timer)}</div>
       )}
-      {/* {progressMessage && (
-        <div className="mt-4 text-xl font-bold">{progressMessage}</div>
-      )} */}
 
-      {/* <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <div className="flex items-center gap-3">
-              <CheckCircle className="text-green-600" size={32} />
-              <div>
-                <AlertDialogTitle className="text-green-900 text-xl font-semibold">
-                  Video Uploaded Successfully!
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-green-700 mt-1">
-                  Thank you! Your video has been recorded and uploaded. You may
-                  now safely close this page.
-                </AlertDialogDescription>
-              </div>
-            </div>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <button
-              onClick={() => setShowSuccessDialog(false)}
-              className="btn btn-green"
-            >
-              OK
-            </button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog> */}
       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -332,8 +213,7 @@ function VideoRecorder({ uuid, doctor }) {
                   Video Uploaded Successfully!
                 </AlertDialogTitle>
                 <AlertDialogDescription className="mt-1 text-sm text-muted-foreground">
-                  Thank you! Your video has been recorded and uploaded. You may
-                  now safely close this page.
+                  Thank you! Your video has been recorded and uploaded.
                 </AlertDialogDescription>
               </div>
             </div>
