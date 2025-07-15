@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { backendUrl } from "@/config";
 
 function VideoRecorder({ uuid }) {
-  const [orientation, setOrientation] = useState("portrait"); // portrait or landscape
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [progressMessage, setProgressMessage] = useState("");
@@ -13,7 +12,7 @@ function VideoRecorder({ uuid }) {
   const streamRef = useRef(null);
   const chunkIntervalRef = useRef(null);
   const timerRef = useRef(null);
-  const activeRecorderRef = useRef(null);
+  const activeRecorderRef = useRef(null); // ✅ Track active recorder
 
   const queryClient = useQueryClient();
 
@@ -22,7 +21,7 @@ function VideoRecorder({ uuid }) {
       axios.delete(`${backendUrl}doctors/record/${uuid}/delete`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] }),
-    onError: (e) => toast.error(`${e}Failed to delete previous video`),
+    onError: () => toast.error("Failed to delete previous video"),
   });
 
   const uploadChunkMutation = useMutation({
@@ -36,8 +35,7 @@ function VideoRecorder({ uuid }) {
   });
 
   const finishMutation = useMutation({
-    mutationFn: ({ orientation }) =>
-      axios.post(`${backendUrl}doctors/record/${uuid}/finish`, { orientation }),
+    mutationFn: () => axios.post(`${backendUrl}doctors/record/${uuid}/finish`),
     onSuccess: () => {
       toast.success("Video merged successfully");
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
@@ -63,7 +61,7 @@ function VideoRecorder({ uuid }) {
     };
 
     recorder.start();
-    activeRecorderRef.current = recorder;
+    activeRecorderRef.current = recorder; // ✅ Store the currently active recorder
 
     setTimeout(() => {
       if (recorder.state === "recording") {
@@ -78,21 +76,8 @@ function VideoRecorder({ uuid }) {
   const handleStart = () => {
     deleteMutation.mutate(undefined, {
       onSuccess: () => {
-        const videoConstraints =
-          orientation === "portrait"
-            ? {
-                width: { ideal: 720 },
-                height: { ideal: 1280 },
-                facingMode: "user",
-              }
-            : {
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                facingMode: "user",
-              };
-
         navigator.mediaDevices
-          .getUserMedia({ audio: true, video: videoConstraints })
+          .getUserMedia({ video: true, audio: true })
           .then((stream) => {
             streamRef.current = stream;
             videoRef.current.srcObject = stream;
@@ -120,6 +105,7 @@ function VideoRecorder({ uuid }) {
     setTimer(0);
     setProgressMessage("Processing video...");
 
+    // ✅ Stop active recorder if still recording
     if (
       activeRecorderRef.current &&
       activeRecorderRef.current.state === "recording"
@@ -131,13 +117,11 @@ function VideoRecorder({ uuid }) {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     videoRef.current.srcObject = null;
 
+    // ✅ Delay finish until last chunk is uploaded
     setTimeout(() => {
-      finishMutation.mutate(
-        { orientation },
-        {
-          onSettled: () => setProgressMessage(""),
-        }
-      );
+      finishMutation.mutate(undefined, {
+        onSettled: () => setProgressMessage(""),
+      });
     }, 500);
   };
 
@@ -154,65 +138,14 @@ function VideoRecorder({ uuid }) {
       sec % 60
     ).padStart(2, "0")}`;
 
-  useEffect(() => {
-    const handleOrientation = () => {
-      const orientationVal = window.orientation;
-      if (orientationVal === 90 || orientationVal === -90) {
-        toast.warning("Rotate your device to portrait mode");
-      }
-    };
-    window.addEventListener("orientationchange", handleOrientation);
-    return () => {
-      window.removeEventListener("orientationchange", handleOrientation);
-    };
-  }, []);
-
   return (
-    <div className="p-6 bg-white shadow rounded flex flex-col items-center">
-      {/* Orientation selector */}
-      <div className="mb-4 flex gap-4">
-        <button
-          className={`px-4 py-2 rounded ${
-            orientation === "portrait"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200"
-          }`}
-          onClick={() => setOrientation("portrait")}
-          disabled={isRecording}
-        >
-          Portrait
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            orientation === "landscape"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200"
-          }`}
-          onClick={() => setOrientation("landscape")}
-          disabled={isRecording}
-        >
-          Landscape
-        </button>
-      </div>
-
-      <div
-        className={`relative w-full max-w-[400px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300`}
-        style={{
-          aspectRatio: orientation === "portrait" ? "9 / 16" : "16 / 9",
-          maxHeight: "80vh",
-        }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          className="w-full h-full object-cover bg-black"
-          style={{ transform: "rotate(0deg)" }}
-        />
-        <div className="absolute top-0 left-0 w-full h-full  pointer-events-none rounded-lg" />
-      </div>
-
+    <div className="p-6 bg-white shadow rounded">
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        className="w-full h-64 bg-black mb-4"
+      />
       <div className="flex gap-4">
         <button
           onClick={handleStart}
@@ -229,14 +162,11 @@ function VideoRecorder({ uuid }) {
           Finish
         </button>
       </div>
-
       {isRecording && (
-        <div className="mt-4 font-bold text-lg">Timer: {formatTime(timer)}</div>
+        <div className="mt-4 font-bold">Timer: {formatTime(timer)}</div>
       )}
       {progressMessage && (
-        <div className="mt-4 font-semibold text-gray-700">
-          {progressMessage}
-        </div>
+        <div className="mt-4 font-bold">{progressMessage}</div>
       )}
     </div>
   );

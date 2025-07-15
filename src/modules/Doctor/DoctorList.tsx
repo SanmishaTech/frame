@@ -417,8 +417,8 @@ const DoctorList = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
-        <DialogContent className=" sm:max-w-[600px]">
+      {/* <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
+        <DialogContent className="max-h-[600px] sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Doctor Video</DialogTitle>
             <DialogDescription>
@@ -436,6 +436,33 @@ const DoctorList = () => {
           )}
 
           <div className="mt-4 flex justify-end">
+            <DialogClose asChild>
+              <Button variant="secondary">Close</Button>
+            </DialogClose>
+          </div>
+        </DialogContent>
+      </Dialog> */}
+      <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
+        <DialogContent className="max-h-[100vh] sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Doctor Video</DialogTitle>
+            <DialogDescription>
+              Video from the doctor - {selectedDoctorName}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedVideoUrl && (
+            <div className="mt-2">
+              <video
+                controls
+                autoPlay
+                className="w-full max-h-[430px] rounded shadow-md border object-contain"
+                src={selectedVideoUrl}
+              />
+            </div>
+          )}
+
+          <div className="mt-2 flex justify-end">
             <DialogClose asChild>
               <Button variant="secondary">Close</Button>
             </DialogClose>

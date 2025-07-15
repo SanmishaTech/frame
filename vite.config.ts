@@ -11,4 +11,10 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // server: {
+  //   host: true, // This allows access from network and ngrok
+  //   allowedHosts: [
+  //     "", // 👈 Add your current ngrok domain here
+  //   ],
+  // },
 });
