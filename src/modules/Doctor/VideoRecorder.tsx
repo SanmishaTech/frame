@@ -9,6 +9,7 @@ function VideoRecorder({ uuid }) {
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [progressMessage, setProgressMessage] = useState("");
+
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const chunkIntervalRef = useRef(null);
@@ -22,7 +23,10 @@ function VideoRecorder({ uuid }) {
       axios.delete(`${backendUrl}doctors/record/${uuid}/delete`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] }),
-    onError: (e) => toast.error(`${e}Failed to delete previous video`),
+    onError: (e) => {
+      console.error("Delete error:", e);
+      toast.error("Failed to delete previous video");
+    },
   });
 
   const uploadChunkMutation = useMutation({
@@ -32,7 +36,10 @@ function VideoRecorder({ uuid }) {
       return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
     onSuccess: () => console.log("Chunk uploaded"),
-    onError: () => toast.error("Chunk upload failed"),
+    onError: (e) => {
+      console.error("Chunk upload error:", e);
+      toast.error("Chunk upload failed");
+    },
   });
 
   const finishMutation = useMutation({
@@ -42,24 +49,44 @@ function VideoRecorder({ uuid }) {
       toast.success("Video merged successfully");
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
     },
-    onError: () => toast.error("Video merge failed"),
+    onError: (e) => {
+      console.error("Video merge error:", e);
+      toast.error("Video merge failed");
+    },
   });
 
   const startChunkRecording = () => {
+    if (!streamRef.current) return;
+
     const options = MediaRecorder.isTypeSupported("video/webm")
       ? { mimeType: "video/webm" }
       : {};
 
-    const recorder = new MediaRecorder(streamRef.current, options);
+    let recorder;
+    try {
+      recorder = new MediaRecorder(streamRef.current, options);
+    } catch (err) {
+      console.error("Failed to create MediaRecorder:", err);
+      toast.error("Recording not supported on this browser");
+      return;
+    }
+
     const chunks = [];
 
     recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunks.push(e.data);
+      if (e.data.size > 0) {
+        chunks.push(e.data);
+      }
     };
 
     recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: "video/webm" });
-      uploadChunkMutation.mutate(blob);
+      try {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        uploadChunkMutation.mutate(blob);
+      } catch (err) {
+        console.error("Failed to upload chunk:", err);
+        toast.error("Failed to process video chunk");
+      }
     };
 
     recorder.start();
@@ -76,60 +103,99 @@ function VideoRecorder({ uuid }) {
   };
 
   const handleStart = () => {
+    if (isRecording) return;
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast.error("Your browser does not support camera access");
+      return;
+    }
+
     deleteMutation.mutate(undefined, {
       onSuccess: () => {
         const videoConstraints =
           orientation === "portrait"
             ? {
+                facingMode: "user",
                 width: { ideal: 720 },
                 height: { ideal: 1280 },
-                facingMode: "user",
               }
             : {
+                facingMode: "user",
                 width: { ideal: 1280 },
                 height: { ideal: 720 },
-                facingMode: "user",
               };
 
         navigator.mediaDevices
           .getUserMedia({ audio: true, video: videoConstraints })
           .then((stream) => {
+            if (!videoRef.current) {
+              toast.error("Video element not ready");
+              return;
+            }
+
             streamRef.current = stream;
             videoRef.current.srcObject = stream;
             videoRef.current.play();
+
             setIsRecording(true);
             setTimer(0);
             setProgressMessage("");
 
             startChunkRecording();
             chunkIntervalRef.current = setInterval(startChunkRecording, 3000);
-
             timerRef.current = setInterval(() => {
               setTimer((t) => t + 1);
             }, 1000);
           })
-          .catch(() => toast.error("Camera/Mic access denied"));
+          .catch((err) => {
+            console.error("getUserMedia error:", err);
+            if (err.name === "NotAllowedError") {
+              toast.error("Permission denied for camera/microphone.");
+            } else if (err.name === "NotFoundError") {
+              toast.error("No camera/microphone found.");
+            } else {
+              toast.error("Failed to access media devices.");
+            }
+          });
       },
     });
   };
 
   const handleStop = () => {
+    if (!isRecording) return;
+
     setIsRecording(false);
     clearInterval(chunkIntervalRef.current);
     clearInterval(timerRef.current);
     setTimer(0);
     setProgressMessage("Processing video...");
 
-    if (
-      activeRecorderRef.current &&
-      activeRecorderRef.current.state === "recording"
-    ) {
-      activeRecorderRef.current.stop();
-      activeRecorderRef.current = null;
-    }
+    try {
+      if (
+        activeRecorderRef.current &&
+        activeRecorderRef.current.state === "recording"
+      ) {
+        activeRecorderRef.current.stop();
+        activeRecorderRef.current = null;
+      }
 
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    videoRef.current.srcObject = null;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          try {
+            track.stop();
+          } catch (err) {
+            console.warn("Track stop failed:", err);
+          }
+        });
+        streamRef.current = null;
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    } catch (err) {
+      console.error("Stop recording cleanup failed:", err);
+    }
 
     setTimeout(() => {
       finishMutation.mutate(
@@ -145,7 +211,14 @@ function VideoRecorder({ uuid }) {
     return () => {
       clearInterval(chunkIntervalRef.current);
       clearInterval(timerRef.current);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+
+      try {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((t) => t.stop());
+        }
+      } catch (err) {
+        console.warn("Cleanup error on unmount:", err);
+      }
     };
   }, []);
 
@@ -156,8 +229,8 @@ function VideoRecorder({ uuid }) {
 
   useEffect(() => {
     const handleOrientation = () => {
-      const orientationVal = window.orientation;
-      if (orientationVal === 90 || orientationVal === -90) {
+      const o = window.orientation;
+      if (o === 90 || o === -90) {
         toast.warning("Rotate your device to portrait mode");
       }
     };
@@ -210,7 +283,7 @@ function VideoRecorder({ uuid }) {
           className="w-full h-full object-cover bg-black"
           style={{ transform: "rotate(0deg)" }}
         />
-        <div className="absolute top-0 left-0 w-full h-full  pointer-events-none rounded-lg" />
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none rounded-lg" />
       </div>
 
       <div className="flex gap-4">
