@@ -14,6 +14,7 @@ import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ZodError, ZodIssue } from "zod";
 import Validate, { handleApiValidationErrors } from "@/lib/Handlevalidation";
+import { Controller } from "react-hook-form";
 
 //
 // 1. Define the shape of what your backend is returning
@@ -95,6 +96,7 @@ const Login = () => {
   // Get setError from useForm
   const {
     register,
+    control,
     handleSubmit,
     setError, // <-- Destructure setError
     formState: { errors },
@@ -168,7 +170,7 @@ const Login = () => {
           {" "}
           {/* Added pb-3 for error spacing */}
           <Label htmlFor="email">Email</Label>
-          <Input
+          {/* <Input
             id="email"
             type="email"
             placeholder="m@example.com"
@@ -176,6 +178,20 @@ const Login = () => {
             required
             disabled={isLoading}
             aria-invalid={errors.email ? "true" : "false"} // Accessibility
+          /> */}
+          <Controller
+            name="email"
+            control={control}
+            render={({ field }) => (
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                {...field}
+                disabled={isLoading}
+                aria-invalid={errors.email ? "true" : "false"}
+              />
+            )}
           />
           {/* Display RHF errors (client OR server-set) */}
           {errors.email && (
@@ -202,12 +218,24 @@ const Login = () => {
             </a>
           </div> */}
           <Label htmlFor="password">Password</Label>
-          <PasswordInput
+          {/* <PasswordInput
             id="password"
             {...register("password")} // RHF validation triggers on change/blur
             required
             disabled={isLoading}
             aria-invalid={errors.password ? "true" : "false"} // Accessibility
+          /> */}
+          <Controller
+            name="password"
+            control={control}
+            render={({ field }) => (
+              <PasswordInput
+                id="password"
+                {...field}
+                disabled={isLoading}
+                aria-invalid={errors.password ? "true" : "false"}
+              />
+            )}
           />
           {/* Display RHF errors (client OR server-set) */}
           {errors.password && (
