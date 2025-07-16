@@ -121,10 +121,18 @@ function VideoRecorder({ uuid }) {
 
     deleteMutation.mutate(undefined, {
       onSuccess: () => {
-        // No orientation-based constraints here, just default
-        const videoConstraints = {
-          facingMode: "user",
-        };
+        const videoConstraints =
+          orientation === "portrait"
+            ? {
+                facingMode: "user",
+                width: { ideal: 720 },
+                height: { ideal: 1280 },
+              }
+            : {
+                facingMode: "user",
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              };
 
         navigator.mediaDevices
           .getUserMedia({ audio: true, video: videoConstraints })
