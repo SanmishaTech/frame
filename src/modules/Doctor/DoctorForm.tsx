@@ -192,10 +192,16 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
                 >
                   Name <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="name"
-                  {...register("name")}
-                  placeholder="Enter doctor's name"
+                <Controller
+                  name="name"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="name"
+                      placeholder="Enter doctor's name"
+                      {...field}
+                    />
+                  )}
                 />
                 {errors.name && (
                   <p className="text-red-500 text-xs mt-1">
@@ -212,11 +218,17 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
                 >
                   Email <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register("email")}
-                  placeholder="Enter doctor's email"
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter doctor's email"
+                      {...field}
+                    />
+                  )}
                 />
                 {errors.email && (
                   <p className="text-red-500 text-xs mt-1">
@@ -235,12 +247,18 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
                 >
                   Mobile <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="mobile"
-                  {...register("mobile")}
-                  placeholder="Enter 10-digit mobile number"
-                  maxLength={10}
-                  minLength={10}
+                <Controller
+                  name="mobile"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="mobile"
+                      placeholder="Enter 10-digit mobile number"
+                      maxLength={10}
+                      minLength={10}
+                      {...field}
+                    />
+                  )}
                 />
                 {errors.mobile && (
                   <p className="text-red-500 text-xs mt-1">
@@ -257,10 +275,12 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
                 >
                   Degree <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="degree"
-                  {...register("degree")}
-                  placeholder="Enter degree"
+                <Controller
+                  name="degree"
+                  control={control}
+                  render={({ field }) => (
+                    <Input id="degree" placeholder="Enter degree" {...field} />
+                  )}
                 />
                 {errors.degree && (
                   <p className="text-red-500 text-xs mt-1">
@@ -277,10 +297,16 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
                 >
                   Designation
                 </Label>
-                <Input
-                  id="designation"
-                  {...register("designation")}
-                  placeholder="Enter designation (optional)"
+                <Controller
+                  name="designation"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="designation"
+                      placeholder="Enter designation (optional)"
+                      {...field}
+                    />
+                  )}
                 />
                 {errors.designation && (
                   <p className="text-red-500 text-xs mt-1">
@@ -297,10 +323,16 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
                 >
                   Specialty <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="specialty"
-                  {...register("specialty")}
-                  placeholder="Enter specialty"
+                <Controller
+                  name="specialty"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="specialty"
+                      placeholder="Enter specialty"
+                      {...field}
+                    />
+                  )}
                 />
                 {errors.specialty && (
                   <p className="text-red-500 text-xs mt-1">
@@ -317,10 +349,12 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
                 >
                   Topic <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="topic"
-                  {...register("topic")}
-                  placeholder="Enter topic"
+                <Controller
+                  name="topic"
+                  control={control}
+                  render={({ field }) => (
+                    <Input id="topic" placeholder="Enter topic" {...field} />
+                  )}
                 />
                 {errors.topic && (
                   <p className="text-red-500 text-xs mt-1">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ const Register = () => {
   const navigate = useNavigate();
 
   const {
-    register,
+    control,
     handleSubmit,
     setError,
     formState: { errors },
@@ -88,13 +88,18 @@ const Register = () => {
         <div className="flex flex-col space-y-6">
           <div className="grid gap-2 relative">
             <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="John Doe"
-              {...register("name")}
-              required
-              disabled={registerMutation.isPending}
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  disabled={registerMutation.isPending}
+                  {...field}
+                />
+              )}
             />
             {errors.name && (
               <span className="text-destructive text-xs absolute -bottom-5">
@@ -104,13 +109,18 @@ const Register = () => {
           </div>
           <div className="grid gap-2 relative">
             <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="m@example.com"
-              {...register("email")}
-              required
-              disabled={registerMutation.isPending}
+            <Controller
+              name="email"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  disabled={registerMutation.isPending}
+                  {...field}
+                />
+              )}
             />
             {errors.email && (
               <p className="text-destructive text-xs absolute -bottom-5">
@@ -120,11 +130,16 @@ const Register = () => {
           </div>
           <div className="grid gap-2 relative">
             <Label htmlFor="password">Password</Label>
-            <PasswordInput
-              id="password"
-              {...register("password")}
-              required
-              disabled={registerMutation.isPending}
+            <Controller
+              name="password"
+              control={control}
+              render={({ field }) => (
+                <PasswordInput
+                  id="password"
+                  disabled={registerMutation.isPending}
+                  {...field}
+                />
+              )}
             />
             {errors.password && (
               <p className="text-destructive text-xs absolute -bottom-5">
@@ -134,11 +149,16 @@ const Register = () => {
           </div>
           <div className="grid gap-2 relative">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <PasswordInput
-              id="confirmPassword"
-              {...register("confirmPassword")}
-              required
-              disabled={registerMutation.isPending}
+            <Controller
+              name="confirmPassword"
+              control={control}
+              render={({ field }) => (
+                <PasswordInput
+                  id="confirmPassword"
+                  disabled={registerMutation.isPending}
+                  {...field}
+                />
+              )}
             />
             {errors.confirmPassword && (
               <p className="text-destructive text-xs absolute -bottom-5">

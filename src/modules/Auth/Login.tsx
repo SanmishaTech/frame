@@ -170,15 +170,6 @@ const Login = () => {
           {" "}
           {/* Added pb-3 for error spacing */}
           <Label htmlFor="email">Email</Label>
-          {/* <Input
-            id="email"
-            type="email"
-            placeholder="m@example.com"
-            {...register("email")} // RHF validation triggers on change/blur
-            required
-            disabled={isLoading}
-            aria-invalid={errors.email ? "true" : "false"} // Accessibility
-          /> */}
           <Controller
             name="email"
             control={control}
@@ -218,13 +209,6 @@ const Login = () => {
             </a>
           </div> */}
           <Label htmlFor="password">Password</Label>
-          {/* <PasswordInput
-            id="password"
-            {...register("password")} // RHF validation triggers on change/blur
-            required
-            disabled={isLoading}
-            aria-invalid={errors.password ? "true" : "false"} // Accessibility
-          /> */}
           <Controller
             name="password"
             control={control}
