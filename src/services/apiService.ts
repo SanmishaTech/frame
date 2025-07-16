@@ -1,6 +1,7 @@
 import axios from "axios";
 import { backendUrl } from "../config";
 import { toast } from "sonner";
+
 const api = axios.create({
   baseURL: backendUrl,
   headers: {
@@ -21,7 +22,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const originalRequest = error.config;
+
+    const isLoginRequest = originalRequest?.url?.includes("/auth/login");
+    if (error.response?.status === 401 && !isLoginRequest) {
       // Clear localStorage tokens
       localStorage.removeItem("authToken");
       localStorage.removeItem("user");

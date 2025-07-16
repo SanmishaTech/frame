@@ -139,7 +139,7 @@ const Login = () => {
       } else {
         toast.error("Internal Server Error");
       }
-      console.error("Login error details:", error);
+      // console.error("Login error details:", error);
     },
   });
 
