@@ -359,20 +359,20 @@ const DoctorList = () => {
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
+                              <button
+                                type="button"
+                                className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+                              >
                                 <span className="sr-only">Open menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
-                              </Button>
+                              </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56">
                               <DropdownMenuGroup>
                                 <DropdownMenuItem
-                                  // onClick={() => confirmDelete(doctor.id)}
-                                  onSelect={(e) => {
-                                    // e.preventDefault(); // prevent default dropdown behavior
-
+                                  onSelect={() => {
                                     setTimeout(() => {
-                                      confirmDelete(doctor.id); // open dialog after dropdown closes
+                                      confirmDelete(doctor.id);
                                     }, 0);
                                   }}
                                 >
@@ -381,7 +381,7 @@ const DoctorList = () => {
                                   </div>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() =>
+                                  onSelect={() =>
                                     navigate(`/doctors/${doctor.id}/edit`)
                                   }
                                 >

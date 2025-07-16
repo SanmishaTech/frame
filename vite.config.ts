@@ -11,17 +11,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: {
-    // host: true,
-    // allowedHosts: [
-    //   "text.ngrok-free.app", // 👈 Add your current ngrok domain here
-    // ],
-    proxy: {
-      "/api": {
-        target: "http://localhost:3000",
-        changeOrigin: true,
-        secure: false,
-      },
-    },
-  },
 });

@@ -1,5 +1,4 @@
 import UpdateProfile from "./UpdateProfile";
-import UpdateUserProfile from "./UpdateUserProfile";
 
 import ChangePassword from "./ChangePassword";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,7 +31,7 @@ export function ProfilePage() {
         <TabsContent value="profile">
           {/* <UpdateProfile /> */}
           {/* <UpdateUserProfile /> */}
-          {userRole === "admin" ? <UpdateProfile /> : <UpdateUserProfile />}
+          <UpdateProfile />
         </TabsContent>
         <TabsContent value="password">
           <ChangePassword />

@@ -87,7 +87,6 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
   };
 
   const {
-    register,
     handleSubmit,
     setValue,
     watch,
