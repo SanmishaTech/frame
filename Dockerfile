@@ -23,15 +23,15 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy only necessary files
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
+# Install serve to serve the build folder
+RUN npm install -g serve
 
-# Expose port (change if your app uses a different port)
+# Copy build output
+COPY --from=builder /app/dist ./dist
+
 EXPOSE 3000
 
-# Start the app with Next.js
+# Serve the dist folder
+CMD ["serve", "-s", "dist", "-l", "3000"]
 CMD ["npx", "next", "start"]
 CMD ["npm", "start"]
