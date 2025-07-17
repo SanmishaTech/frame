@@ -29,9 +29,8 @@ RUN npm install -g serve
 # Copy build output
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 3000
+EXPOSE 80
 
-# Serve the dist folder
-CMD ["serve", "-s", "dist", "-l", "3000"]
-CMD ["npx", "next", "start"]
+# Serve the dist folder on port 80
+CMD ["serve", "-s", "dist", "-l", "80"]
 CMD ["npm", "start"]
