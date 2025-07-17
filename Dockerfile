@@ -33,4 +33,4 @@ EXPOSE 80
 
 # Serve the dist folder on port 80
 CMD ["serve", "-s", "dist", "-l", "80"]
-CMD ["npm", "start"]
+# CMD ["npm", "start"]
