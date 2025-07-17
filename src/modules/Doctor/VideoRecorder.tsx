@@ -205,7 +205,8 @@ function VideoRecorder({ uuid }) {
           onSettled: () => setProgressMessage(""),
         }
       );
-    }, 500);
+      setShowSuccessDialog(true);
+    }, 2000);
   };
 
   useEffect(() => {
@@ -298,7 +299,6 @@ function VideoRecorder({ uuid }) {
         <button
           onClick={() => {
             handleStop();
-            setShowSuccessDialog(true);
           }}
           disabled={!isRecording || finishMutation.isPending}
           className="px-4 py-2 bg-red-500 text-white rounded"

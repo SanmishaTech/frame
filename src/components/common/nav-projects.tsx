@@ -24,7 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-
+import { useNavigate } from "react-router-dom";
 export function NavProjects({
   projects,
 }: {
@@ -35,7 +35,7 @@ export function NavProjects({
   }[];
 }) {
   const { isMobile } = useSidebar();
-
+  const navigate = useNavigate();
   if (!projects.length) return null;
 
   return (
@@ -45,10 +45,19 @@ export function NavProjects({
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
-              <a href={item.url}>
+              {/* <a href={item.url}>
                 <item.icon />
                 <span>{item.name}</span>
-              </a>
+              </a> */}
+              <button
+                onClick={() => {
+                  navigate(`${item.url}`);
+                }}
+              >
+                {" "}
+                <item.icon />
+                <span>{item.name}</span>
+              </button>
             </SidebarMenuButton>
             <DropdownMenu>
               {/* <DropdownMenuTrigger asChild>

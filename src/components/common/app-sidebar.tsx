@@ -15,7 +15,7 @@ import {
   SquareTerminal,
   Icon,
 } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
 import { NavMain } from "@/components/common/nav-main";
 import { NavProjects } from "@/components/common/nav-projects";
 import { NavUser } from "@/components/common/nav-user";
@@ -106,6 +106,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     projects: [],
     navMain: [],
   });
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -138,10 +139,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/dashboard">
+              {/* <a href="/dashboard">
                 <ArrowUpCircleIcon className="h-5 w-5" />
                 <span className="text-base font-semibold">{appName}</span>
-              </a>
+              </a> */}
+              <button
+                onClick={() => {
+                  navigate("/dashboard");
+                }}
+              >
+                <ArrowUpCircleIcon className="h-5 w-5" />
+                <span className="text-base font-semibold">{appName}</span>
+              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
