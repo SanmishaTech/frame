@@ -28,10 +28,10 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/src ./src
 
 # Expose port (change if your app uses a different port)
 EXPOSE 3000
 
-# Start the app
+# Start the app with Next.js
+CMD ["npx", "next", "start"]
 CMD ["npm", "start"]
