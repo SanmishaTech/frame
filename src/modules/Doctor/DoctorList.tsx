@@ -318,7 +318,26 @@ const DoctorList = () => {
                         )}
                       </div>
                     </TableHead>
+                    <TableHead
+                      onClick={() => handleSort("topic")}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex items-center">
+                        <span>Topic</span>
+                        {sortBy === "topic" && (
+                          <span className="ml-1">
+                            {sortOrder === "asc" ? (
+                              <ChevronUp size={16} />
+                            ) : (
+                              <ChevronDown size={16} />
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
 
+                    <TableHead>Video</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -335,64 +354,83 @@ const DoctorList = () => {
                         {doctor.mobile || "N/A"}
                       </TableCell>
                       <TableCell>{doctor.specialty || "N/A"}</TableCell>
+                      <TableCell className="max-w-[250px] break-words whitespace-normal">
+                        {doctor.topic || "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                              onClick={() => {
+                                setSelectedVideoUrl(
+                                  `${backendStaticUrl}/uploads/${doctor.uuid}/${doctor.filepath}`
+                                );
+                                setSelectedDoctorName(doctor.name);
+                                setIsVideoDialogOpen(true);
+                              }}
+                              disabled={!doctor.filepath} // Disable if no video available
+                            >
+                              <Play size={16} />
+                            </button>
+                          </TooltipTrigger>
+
+                          <TooltipContent>
+                            <p>Play Video</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                              onClick={() => EmailMutation.mutate(doctor.id)}
+                              disabled={EmailMutation.isPending}
+                            >
+                              <Mail size={16} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Send Email</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          {/* <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              navigate(`/doctors/${doctor.id}/edit`)
-                            }
-                          >
-                            <Edit size={16} />
-                          </Button> */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                                onClick={() =>
+                                  navigate(`/doctors/${doctor.id}/edit`)
+                                }
+                              >
+                                <Edit size={16} />
+                              </button>
+                            </TooltipTrigger>
+
+                            <TooltipContent>
+                              <p>Edit Doctor</p>
+                            </TooltipContent>
+                          </Tooltip>
 
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <button
                                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
-                                onClick={() => {
-                                  setSelectedVideoUrl(
-                                    `${backendStaticUrl}/uploads/${doctor.uuid}/${doctor.filepath}`
-                                  );
-                                  setSelectedDoctorName(doctor.name);
-                                  setIsVideoDialogOpen(true);
-                                }}
-                                disabled={!doctor.filepath} // Disable if no video available
+                                onClick={() => confirmDelete(doctor.id)}
                               >
-                                <Play size={16} />
+                                <Trash2 size={16} />
                               </button>
                             </TooltipTrigger>
 
                             <TooltipContent>
-                              <p>Play Video</p>
+                              <p>Delete Doctor</p>
                             </TooltipContent>
                           </Tooltip>
 
-                          {/* <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => confirmDelete(doctor.id)}
-                          >
-                            <Trash2 size={16} />
-                          </Button> */}
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
-                                onClick={() => EmailMutation.mutate(doctor.id)}
-                                disabled={EmailMutation.isPending}
-                              >
-                                <Mail size={16} />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Send Email</p>
-                            </TooltipContent>
-                          </Tooltip>
-
-                          <DropdownMenu>
+                          {/* <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
                                 type="button"
@@ -449,7 +487,7 @@ const DoctorList = () => {
                                 </DropdownMenuItem>
                               </DropdownMenuGroup>
                             </DropdownMenuContent>
-                          </DropdownMenu>
+                          </DropdownMenu> */}
                         </div>
                       </TableCell>
                     </TableRow>

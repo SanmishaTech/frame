@@ -289,8 +289,8 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
             {doctor && (
               <div className="text-sm text-primary text-center mb-3">
-                <div className="font-medium">Dr. {doctor.name}</div>
-                <div className="text-xs">Topic: {doctor.topic}</div>
+                <div className="font-medium">{doctor.name}</div>
+                <div className="text-xs">{doctor.topic}</div>
               </div>
             )}
 

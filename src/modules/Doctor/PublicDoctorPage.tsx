@@ -65,7 +65,7 @@ const PublicDoctorPage = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-primary flex justify-center items-center gap-2">
               <UserRound className="text-primary" size={28} />
-              Welcome, Dr. {doctor.name} {`(${doctor.degree})`}
+              Welcome, {doctor.name} {`(${doctor.degree})`}
             </CardTitle>
             <h2 className="text-lg font-semibold text-primary mt-2">
               Topic: {doctor.topic}
