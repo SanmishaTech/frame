@@ -36,7 +36,7 @@ api.interceptors.response.use(
 
       // Redirect to login page after short delay
       setTimeout(() => {
-        window.location.href = "/";
+        window.location.href = "/admin";
       }, 1500);
     }
 

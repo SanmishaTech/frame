@@ -28,6 +28,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ClipboardCopy, CheckCircle } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { get, del, patch, post } from "@/services/apiService";
@@ -56,13 +58,12 @@ import {
   Search,
   PlusCircle,
   MoreHorizontal,
-  CheckCircle,
   XCircle,
 } from "lucide-react";
 import ConfirmDialog from "@/components/common/confirm-dialog";
 import { saveAs } from "file-saver";
 import { Badge } from "@/components/ui/badge"; // Ensure Badge is imported
-
+import { frontendUrl } from "../../config";
 const fetchDoctors = async (
   page: number,
   sortBy: string,
@@ -83,6 +84,7 @@ const DoctorList = () => {
   const [selectedDoctorName, setSelectedDoctorName] = useState<string | null>(
     null
   );
+  const [copiedDoctorId, setCopiedDoctorId] = useState<number | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(10); // Add recordsPerPage state
@@ -179,6 +181,18 @@ const DoctorList = () => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
     setCurrentPage(1); // Reset to the first page
+  };
+
+  const copyToClipboard = async (text: string, doctorId: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedDoctorId(doctorId);
+      toast.success("Video link copied to clipboard!");
+      setTimeout(() => setCopiedDoctorId(null), 2000); // Reset after 2s
+    } catch (err) {
+      toast.error("Failed to copy link.");
+      console.error("Clipboard error:", err);
+    }
   };
 
   return (
@@ -331,7 +345,7 @@ const DoctorList = () => {
                             size="sm"
                             onClick={() => {
                               setSelectedVideoUrl(
-                                `${backendStaticUrl}/uploads/${doctor.filepath}`
+                                `${backendStaticUrl}/uploads/${doctor.uuid}/${doctor.filepath}`
                               );
                               setSelectedDoctorName(doctor.name);
                               setIsVideoDialogOpen(true);
@@ -390,6 +404,28 @@ const DoctorList = () => {
                                     <span>Edit</span>
                                   </div>
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() => {
+                                    const videoUrl = `${frontendUrl}/doctors/record/${doctor.uuid}`;
+                                    copyToClipboard(videoUrl, doctor.id);
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {copiedDoctorId === doctor.id ? (
+                                      <>
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                        <span className="text-green-700 font-medium">
+                                          Link Copied
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ClipboardCopy className="h-4 w-4" />
+                                        <span>Copy Video Link</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </DropdownMenuItem>
                               </DropdownMenuGroup>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -417,31 +453,6 @@ const DoctorList = () => {
         </CardContent>
       </Card>
 
-      {/* <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
-        <DialogContent className="max-h-[600px] sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Doctor Video</DialogTitle>
-            <DialogDescription>
-              Video from the doctor - {selectedDoctorName}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedVideoUrl && (
-            <video
-              controls
-              autoPlay
-              className="w-full rounded shadow-md border"
-              src={selectedVideoUrl}
-            />
-          )}
-
-          <div className="mt-4 flex justify-end">
-            <DialogClose asChild>
-              <Button variant="secondary">Close</Button>
-            </DialogClose>
-          </div>
-        </DialogContent>
-      </Dialog> */}
       <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
         <DialogContent className="max-h-[100vh] sm:max-w-[800px]">
           <DialogHeader>
@@ -462,7 +473,44 @@ const DoctorList = () => {
             </div>
           )}
 
-          <div className="mt-2 flex justify-end">
+          {/* <div className="mt-2 flex justify-end">
+            <DialogClose asChild>
+              <Button variant="secondary">Close</Button>
+            </DialogClose>
+          </div> */}
+          <div className="mt-4 flex justify-end gap-2">
+            {/* Download Button */}
+            {selectedVideoUrl && (
+              <Button
+                onClick={async () => {
+                  try {
+                    const response = await fetch(selectedVideoUrl);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+
+                    const originalFileName =
+                      selectedVideoUrl.split("/").pop() || "video.mp4";
+
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = originalFileName;
+                    document.body.appendChild(link);
+                    link.click();
+
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                  } catch (error) {
+                    console.error("Download failed", error);
+                    toast.error("Failed to download video.");
+                  }
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            )}
+
+            {/* Close Button */}
             <DialogClose asChild>
               <Button variant="secondary">Close</Button>
             </DialogClose>

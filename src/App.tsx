@@ -39,7 +39,7 @@ const App = () => {
         <Routes>
           <Route element={<AuthLayout />}>
             <Route
-              path="/"
+              path="/admin"
               element={
                 <GuestRoute>
                   <Login />

@@ -12,11 +12,18 @@ import {
   AlertDialogDescription,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-function VideoRecorder({ uuid }) {
+import { Button } from "@/components/ui/button";
+import {
+  Smartphone,
+  Monitor,
+  CirclePlay,
+  CircleStop,
+  Clock,
+} from "lucide-react";
+function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [orientation, setOrientation] = useState("portrait"); // portrait or landscape
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [progressMessage, setProgressMessage] = useState("");
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   const videoRef = useRef(null);
@@ -33,7 +40,7 @@ function VideoRecorder({ uuid }) {
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] }),
     onError: (e) => {
-      console.error("Delete error:", e);
+      // console.error("Delete error:", e);
       toast.error("Failed to delete previous video");
     },
   });
@@ -44,9 +51,8 @@ function VideoRecorder({ uuid }) {
       form.append("video", blob, "chunk.webm");
       return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
-    onSuccess: () => console.log("Chunk uploaded"),
     onError: (e) => {
-      console.error("Chunk upload error:", e);
+      // console.error("Chunk upload error:", e);
       toast.error("Chunk upload failed");
     },
   });
@@ -59,7 +65,7 @@ function VideoRecorder({ uuid }) {
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
     },
     onError: (e) => {
-      console.error("Video merge error:", e);
+      // console.error("Video merge error:", e);
       toast.error("Video merge failed");
     },
   });
@@ -75,7 +81,7 @@ function VideoRecorder({ uuid }) {
     try {
       recorder = new MediaRecorder(streamRef.current, options);
     } catch (err) {
-      console.error("Failed to create MediaRecorder:", err);
+      // console.error("Failed to create MediaRecorder:", err);
       toast.error("Recording not supported on this browser");
       return;
     }
@@ -93,7 +99,7 @@ function VideoRecorder({ uuid }) {
         const blob = new Blob(chunks, { type: "video/webm" });
         uploadChunkMutation.mutate(blob);
       } catch (err) {
-        console.error("Failed to upload chunk:", err);
+        // console.error("Failed to upload chunk:", err);
         toast.error("Failed to process video chunk");
       }
     };
@@ -140,7 +146,6 @@ function VideoRecorder({ uuid }) {
 
             setIsRecording(true);
             setTimer(0);
-            setProgressMessage("");
 
             startChunkRecording();
             chunkIntervalRef.current = setInterval(startChunkRecording, 3000);
@@ -169,7 +174,6 @@ function VideoRecorder({ uuid }) {
     clearInterval(chunkIntervalRef.current);
     clearInterval(timerRef.current);
     setTimer(0);
-    setProgressMessage("Processing video...");
 
     try {
       if (
@@ -199,13 +203,9 @@ function VideoRecorder({ uuid }) {
     }
 
     setTimeout(() => {
-      finishMutation.mutate(
-        { orientation },
-        {
-          onSettled: () => setProgressMessage(""),
-        }
-      );
+      finishMutation.mutate({ orientation });
       setShowSuccessDialog(true);
+      if (onVideoSuccess) onVideoSuccess(); // <-- callback triggers the parent
     }, 2000);
   };
 
@@ -243,79 +243,88 @@ function VideoRecorder({ uuid }) {
   }, []);
 
   return (
-    <div className="p-6 bg-white shadow rounded flex flex-col items-center">
-      {/* Orientation selector */}
-      <div className="mb-4 flex gap-4">
-        <button
-          className={`px-4 py-2 rounded ${
-            orientation === "portrait"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200"
-          }`}
-          onClick={() => setOrientation("portrait")}
-          disabled={isRecording}
-        >
-          Portrait
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            orientation === "landscape"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200"
-          }`}
-          onClick={() => setOrientation("landscape")}
-          disabled={isRecording}
-        >
-          Landscape
-        </button>
-      </div>
+    <>
+      {!isVideoCompleted ? (
+        <>
+          <div className="p-6 bg-slate-100 shadow rounded flex flex-col items-center">
+            {/* Orientation selector */}
+            <div className="mb-4 w-full bg-muted p-1 rounded-md flex gap-1">
+              <Button
+                variant={orientation === "portrait" ? "default" : "ghost"}
+                onClick={() => setOrientation("portrait")}
+                disabled={isRecording}
+                className="flex-1 flex items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm"
+              >
+                <Smartphone size={16} />
+                Mobile
+              </Button>
+              <Button
+                variant={orientation === "landscape" ? "default" : "ghost"}
+                onClick={() => setOrientation("landscape")}
+                disabled={isRecording}
+                className="flex-1 flex items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm"
+              >
+                <Monitor size={16} />
+                Desktop
+              </Button>
+            </div>
 
-      <div
-        className={`relative w-full max-w-[400px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300`}
-        style={{
-          aspectRatio: orientation === "portrait" ? "9 / 16" : "16 / 9",
-          maxHeight: "80vh",
-        }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          className="w-full h-full object-cover bg-black"
-          style={{ transform: "rotate(0deg)" }}
-        />
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none rounded-lg" />
-      </div>
+            <div
+              className={`relative w-full max-w-[400px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300`}
+              style={{
+                aspectRatio: orientation === "portrait" ? "9 / 16" : "16 / 9",
+                maxHeight: "80vh",
+              }}
+            >
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-full object-cover bg-black"
+                style={{ transform: "rotate(0deg)" }}
+              />
+              <div className="absolute top-0 left-0 w-full h-full pointer-events-none rounded-lg" />
+            </div>
 
-      <div className="flex gap-4">
-        <button
-          onClick={handleStart}
-          disabled={isRecording || deleteMutation.isPending}
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          Start
-        </button>
-        <button
-          onClick={() => {
-            handleStop();
-          }}
-          disabled={!isRecording || finishMutation.isPending}
-          className="px-4 py-2 bg-red-500 text-white rounded"
-        >
-          Finish
-        </button>
-      </div>
+            {doctor && (
+              <div className="text-sm text-primary text-center mb-3">
+                <div className="font-medium">Dr. {doctor.name}</div>
+                <div className="text-xs">Topic: {doctor.topic}</div>
+              </div>
+            )}
 
-      {isRecording && (
-        <div className="mt-4 font-bold text-lg">Timer: {formatTime(timer)}</div>
+            <div className="flex gap-4 mt-2">
+              <Button
+                onClick={handleStart}
+                disabled={isRecording || deleteMutation.isPending}
+                variant="default"
+                className="w-32 bg-green-600 hover:bg-green-700 text-white px-5 py-2 flex items-center justify-center gap-2"
+              >
+                <CirclePlay size={18} />
+                Start
+              </Button>
+              <Button
+                onClick={handleStop}
+                disabled={!isRecording || finishMutation.isPending}
+                variant="destructive"
+                className="w-32 px-5 py-2 flex items-center justify-center gap-2"
+              >
+                <CircleStop size={18} />
+                Finish
+              </Button>
+            </div>
+
+            {isRecording && (
+              <div className="mt-4 font-bold text-lg">
+                Timer: {formatTime(timer)}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        ""
       )}
-      {progressMessage && (
-        <div className="mt-4 font-semibold text-gray-700">
-          {progressMessage}
-        </div>
-      )}
-
       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -332,7 +341,7 @@ function VideoRecorder({ uuid }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
 
