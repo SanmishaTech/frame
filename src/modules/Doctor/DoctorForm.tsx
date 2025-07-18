@@ -289,7 +289,7 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
               </div>
 
               {/* Designation (Optional) */}
-              <div>
+              <div className="hidden">
                 <Label
                   htmlFor="designation"
                   className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -341,7 +341,7 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
               </div>
 
               {/* Topic */}
-              <div>
+              <div className="lg:col-span-3">
                 <Label
                   htmlFor="topic"
                   className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"

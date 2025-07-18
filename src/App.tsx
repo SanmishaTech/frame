@@ -26,6 +26,7 @@ import CreateDoctor from "./modules/Doctor/CreateDoctor";
 import EditDoctor from "./modules/Doctor/EditDoctor";
 import PublicDoctorPage from "./modules/Doctor/PublicDoctorPage";
 import GuestRoute from "./components/common/guest-route";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const App = () => {
   useEffect(() => {
@@ -35,84 +36,86 @@ const App = () => {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <Router>
-        <Routes>
-          <Route element={<AuthLayout />}>
+      <TooltipProvider>
+        <Router>
+          <Routes>
+            <Route element={<AuthLayout />}>
+              <Route
+                path="/admin"
+                element={
+                  <GuestRoute>
+                    <Login />
+                  </GuestRoute>
+                }
+              />
+              {/* <Route path="/register" element={<Register />} /> */}
+              {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
+              {/* <Route path="/reset-password/:token" element={<ResetPassword />} /> */}
+              {/* Add other auth routes here */}
+            </Route>
+            <Route element={<MainLayout />}>
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/users"
+                element={
+                  <ProtectedRoute>
+                    <UserList />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/doctors"
+                element={
+                  <ProtectedRoute>
+                    <DoctorList />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/doctors/create"
+                element={
+                  <ProtectedRoute>
+                    <CreateDoctor />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/doctors/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <EditDoctor />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
             <Route
-              path="/admin"
+              path="/doctors/record/:uuid"
               element={
                 <GuestRoute>
-                  <Login />
+                  <PublicDoctorPage />
                 </GuestRoute>
               }
             />
-            {/* <Route path="/register" element={<Register />} /> */}
-            {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
-            {/* <Route path="/reset-password/:token" element={<ResetPassword />} /> */}
-            {/* Add other auth routes here */}
-          </Route>
-          <Route element={<MainLayout />}>
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/users"
-              element={
-                <ProtectedRoute>
-                  <UserList />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/doctors"
-              element={
-                <ProtectedRoute>
-                  <DoctorList />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/doctors/create"
-              element={
-                <ProtectedRoute>
-                  <CreateDoctor />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/doctors/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <EditDoctor />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-          <Route
-            path="/doctors/record/:uuid"
-            element={
-              <GuestRoute>
-                <PublicDoctorPage />
-              </GuestRoute>
-            }
-          />
-        </Routes>
-      </Router>
+          </Routes>
+        </Router>
+      </TooltipProvider>
     </>
   );
 };
