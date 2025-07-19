@@ -25,6 +25,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [frameColor, setFrameColor] = useState("orange");
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -58,8 +59,11 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   });
 
   const finishMutation = useMutation({
-    mutationFn: ({ orientation }) =>
-      axios.post(`${backendUrl}doctors/record/${uuid}/finish`, { orientation }),
+    mutationFn: ({ orientation, frameColor }) =>
+      axios.post(`${backendUrl}doctors/record/${uuid}/finish`, {
+        orientation,
+        frameColor,
+      }),
     onSuccess: () => {
       toast.success("Video merged successfully");
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
@@ -203,7 +207,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     }
 
     setTimeout(() => {
-      finishMutation.mutate({ orientation });
+      finishMutation.mutate({ orientation, frameColor });
       setShowSuccessDialog(true);
       if (onVideoSuccess) onVideoSuccess(); // <-- callback triggers the parent
     }, 2000);
@@ -248,6 +252,37 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         <>
           <div className="p-6 bg-slate-100 shadow rounded flex flex-col items-center">
             {/* Orientation selector */}
+            <div className="w-full mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select Frame Color
+              </label>
+              <div className="flex items-center gap-3 flex-wrap">
+                {["orange", "red", "green"].map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setFrameColor(color)}
+                    className={`w-8 h-8 rounded-full border-2 ${
+                      frameColor === color
+                        ? "border-black"
+                        : "border-transparent"
+                    }`}
+                    style={{ backgroundColor: color }}
+                    type="button"
+                    disabled={isRecording}
+                  />
+                ))}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={frameColor}
+                    onChange={(e) => setFrameColor(e.target.value)}
+                    className="w-8 h-8 border rounded"
+                    disabled={isRecording}
+                  />
+                  <span className="text-sm">{frameColor}</span>
+                </div>
+              </div>
+            </div>
             <div className="mb-4 w-full bg-muted p-1 rounded-md flex gap-1">
               <Button
                 variant={orientation === "portrait" ? "default" : "ghost"}
