@@ -572,9 +572,10 @@ const DoctorList = () => {
                         <td className="p-2 text-muted-foreground">
                           {parsedDate || "Unknown"}
                         </td>
-                        <td className="p-2">
+                        <td className="p-2 flex gap-2">
                           <Button
                             size="sm"
+                            variant="default"
                             onClick={() =>
                               setSelectedFile(
                                 `${selectedDoctor.uuid}/${fileName}`
@@ -582,6 +583,33 @@ const DoctorList = () => {
                             }
                           >
                             View
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={async () => {
+                              try {
+                                await del(
+                                  `doctors/record/${selectedDoctor.id}/${fileName}/delete`
+                                );
+
+                                toast.success("Video deleted successfully");
+
+                                // Refresh doctor list after deletion
+                                await refetch();
+
+                                // Remove from local list immediately
+                                setSelectedFileList((prev) =>
+                                  prev.filter((f) => f !== fileName)
+                                );
+                              } catch (err) {
+                                console.error("Delete error:", err);
+                                toast.error("Failed to delete video.");
+                              }
+                            }}
+                          >
+                            Delete
                           </Button>
                         </td>
                       </tr>
