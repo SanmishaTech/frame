@@ -128,7 +128,7 @@ const PublicDoctorPage = () => {
                       </li>
                       <li>
                         You can use external microphone or lighting to record
-                        our video.
+                        your video.
                       </li>
                       <li>
                         Your video should be 1 to 3 minutes long in duration.

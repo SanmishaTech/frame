@@ -87,9 +87,10 @@ const DoctorList = () => {
   const queryClient = useQueryClient();
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
-  const [selectedDoctorName, setSelectedDoctorName] = useState<string | null>(
-    null
-  );
+  const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [selectedFileList, setSelectedFileList] = useState<string[]>([]);
+
   const [copiedDoctorId, setCopiedDoctorId] = useState<number | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -199,6 +200,22 @@ const DoctorList = () => {
       toast.error("Failed to copy link.");
       console.error("Clipboard error:", err);
     }
+  };
+
+  const parseDateFromFilename = (filename) => {
+    const match = filename.match(
+      /^(\d{2})_(\d{2})_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{3})_.*\.mp4$/
+    );
+
+    if (!match) return null;
+
+    const [_, day, month, year, hour, minute, second, millisecond] = match;
+
+    const date = new Date(
+      `${year}-${month}-${day}T${hour}:${minute}:${second}.${millisecond}`
+    );
+
+    return date.toLocaleString(); // You can customize format here
   };
 
   return (
@@ -362,11 +379,17 @@ const DoctorList = () => {
                           <TooltipTrigger asChild>
                             <button
                               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                              // onClick={() => {
+                              //   setSelectedVideoUrl(
+                              //     `${backendStaticUrl}/uploads/${doctor.uuid}/${doctor.filepath}`
+                              //   );
+                              //   setSelectedDoctorName(doctor.name);
+                              //   setIsVideoDialogOpen(true);
+                              // }}
                               onClick={() => {
-                                setSelectedVideoUrl(
-                                  `${backendStaticUrl}/uploads/${doctor.uuid}/${doctor.filepath}`
-                                );
-                                setSelectedDoctorName(doctor.name);
+                                setSelectedFileList(doctor.filepath || []);
+                                setSelectedDoctor(doctor);
+                                setSelectedFile(null); // Reset selected file
                                 setIsVideoDialogOpen(true);
                               }}
                               disabled={!doctor.filepath} // Disable if no video available
@@ -517,57 +540,95 @@ const DoctorList = () => {
           <DialogHeader>
             <DialogTitle>Doctor Video</DialogTitle>
             <DialogDescription>
-              Video from the doctor - {selectedDoctorName}
+              Video from the doctor - {selectedDoctor?.name}
             </DialogDescription>
           </DialogHeader>
 
-          {selectedVideoUrl && (
+          {selectedFile ? (
             <div className="mt-2">
               <video
                 controls
                 autoPlay
                 className="w-full max-h-[430px] rounded shadow-md border object-contain"
-                src={selectedVideoUrl}
+                src={`${backendStaticUrl}/uploads/${selectedFile}`}
               />
+            </div>
+          ) : (
+            <div className="overflow-x-auto  max-h-[400px] overflow-y-auto mt-2">
+              <table className="min-w-full border text-sm">
+                <thead className="">
+                  <tr>
+                    <th className="p-2 text-left border-b">Filename</th>
+                    <th className="p-2 text-left border-b">Date</th>
+                    <th className="p-2 text-left border-b">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedFileList.map((fileName) => {
+                    const parsedDate = parseDateFromFilename(fileName);
+                    return (
+                      <tr key={fileName} className="border-t">
+                        <td className="p-2">{fileName}</td>
+                        <td className="p-2 text-muted-foreground">
+                          {parsedDate || "Unknown"}
+                        </td>
+                        <td className="p-2">
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              setSelectedFile(
+                                `${selectedDoctor.uuid}/${fileName}`
+                              )
+                            }
+                          >
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
 
-          {/* <div className="mt-2 flex justify-end">
-            <DialogClose asChild>
-              <Button variant="secondary">Close</Button>
-            </DialogClose>
-          </div> */}
           <div className="mt-4 flex justify-end gap-2">
-            {/* Download Button */}
-            {selectedVideoUrl && (
-              <Button
-                onClick={async () => {
-                  try {
-                    const response = await fetch(selectedVideoUrl);
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
+            {selectedFile ? (
+              <>
+                {/* Download Button */}
+                <Button
+                  onClick={async () => {
+                    const fileUrl = `${backendStaticUrl}/uploads/${selectedFile}`;
+                    try {
+                      const response = await fetch(fileUrl);
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
 
-                    const originalFileName =
-                      selectedVideoUrl.split("/").pop() || "video.mp4";
+                      const originalFileName =
+                        selectedFile.split("/").pop() || "video.mp4";
 
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = originalFileName;
-                    document.body.appendChild(link);
-                    link.click();
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.download = originalFileName;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                    } catch (error) {
+                      toast.error("Failed to download video.");
+                    }
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
 
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                  } catch (error) {
-                    console.error("Download failed", error);
-                    toast.error("Failed to download video.");
-                  }
-                }}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-            )}
+                {/* Back Button */}
+                <Button variant="outline" onClick={() => setSelectedFile(null)}>
+                  Back
+                </Button>
+              </>
+            ) : null}
 
             {/* Close Button */}
             <DialogClose asChild>
