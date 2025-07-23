@@ -24,7 +24,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [countdown, setCountdown] = useState(0);
   const [showProcessingDialog, setShowProcessingDialog] = useState(false);
 
-  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const chunkIntervalRef = useRef(null);
   const timerRef = useRef(null);
@@ -121,7 +121,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    const video = videoRef.current;
+    const video = canvasRef.current;
     const width = 720;
     const height = 1280;
 
@@ -201,12 +201,12 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
           })
           .then((stream) => {
             streamRef.current = stream;
-            if (!videoRef.current) {
+            if (!canvasRef.current) {
               toast.error("Video element not ready");
               return;
             }
-            videoRef.current.srcObject = stream;
-            videoRef.current.play();
+            canvasRef.current.srcObject = stream;
+            canvasRef.current.play();
 
             setIsRecording(true);
             setTimer(0);
@@ -269,8 +269,8 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         canvasStreamRef.current = null;
       }
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
+      if (canvasRef.current) {
+        canvasRef.current.srcObject = null;
       }
     } catch (err) {
       console.error("Stop recording cleanup failed:", err);
@@ -392,7 +392,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
             }}
           >
             {/* <video
-              ref={videoRef}
+              ref={canvasRef}
               autoPlay
               muted
               playsInline
