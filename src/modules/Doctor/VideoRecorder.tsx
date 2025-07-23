@@ -49,7 +49,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
     onError: () => {
-      // toast.error("Chunk upload failed");
+      toast.error("Chunk upload failed");
     },
   });
 
@@ -64,7 +64,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
     },
     onError: () => {
-      // toast.error("Video merge failed");
+      toast.error("Video merge failed");
     },
   });
 
@@ -96,7 +96,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         const blob = new Blob(chunks, { type: "video/webm" });
         uploadChunkMutation.mutate(blob);
       } catch {
-        // toast.error("Failed to process video chunk");
+        toast.error("Failed to process video chunk");
       }
     };
 
