@@ -24,10 +24,13 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [countdown, setCountdown] = useState(0);
   const [showProcessingDialog, setShowProcessingDialog] = useState(false);
 
-  const canvasRef = useRef(null);
+  const videoRef = useRef(null); // For camera stream
+  const canvasRef = useRef(null); // For recording rotated
   const streamRef = useRef(null);
+  const canvasStreamRef = useRef(null);
   const chunkIntervalRef = useRef(null);
   const timerRef = useRef(null);
+  const drawingIntervalRef = useRef(null);
   const activeRecorderRef = useRef(null);
 
   const queryClient = useQueryClient();
@@ -60,7 +63,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         frameColor,
       }),
     onSuccess: () => {
-      // toast.success("Video merged successfully");
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
     },
     onError: () => {
@@ -68,81 +70,28 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     },
   });
 
-  const startChunkRecording = () => {
-    if (!streamRef.current) return;
-
-    const options = MediaRecorder.isTypeSupported("video/webm")
-      ? { mimeType: "video/webm" }
-      : {};
-
-    let recorder;
-    try {
-      recorder = new MediaRecorder(streamRef.current, options);
-    } catch (err) {
-      toast.error("Recording not supported on this browser");
-      return;
-    }
-
-    const chunks = [];
-
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunks.push(e.data);
-      }
-    };
-
-    recorder.onstop = () => {
-      try {
-        const blob = new Blob(chunks, { type: "video/webm" });
-        uploadChunkMutation.mutate(blob);
-      } catch {
-        toast.error("Failed to process video chunk");
-      }
-    };
-
-    recorder.start();
-    activeRecorderRef.current = recorder;
-
-    setTimeout(() => {
-      if (recorder.state === "recording") {
-        recorder.stop();
-      }
-      if (activeRecorderRef.current === recorder) {
-        activeRecorderRef.current = null;
-      }
-    }, 3000);
-  };
-  const canvasRef = useRef(null);
-  const drawingIntervalRef = useRef(null);
-  const canvasStreamRef = useRef(null);
-
-  // Create canvas and start recording from canvas
   const startCanvasRecording = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
+    const video = videoRef.current;
 
-    const video = canvasRef.current;
     const width = 720;
     const height = 1280;
 
     canvas.width = width;
     canvas.height = height;
 
-    // Draw video on canvas every frame
     drawingIntervalRef.current = setInterval(() => {
-      // Clear canvas
       ctx.clearRect(0, 0, width, height);
 
-      // Draw with rotation (rotate camera feed to match portrait mode)
       ctx.save();
       ctx.translate(width / 2, height / 2);
-      ctx.rotate((90 * Math.PI) / 180); // Rotate 90°
+      ctx.rotate((90 * Math.PI) / 180); // Rotate for portrait
       ctx.drawImage(video, -height / 2, -width / 2, height, width);
       ctx.restore();
-    }, 30); // ~33 fps
+    }, 30); // 30 FPS
 
-    // Record from canvas
-    const canvasStream = canvas.captureStream(30); // 30 FPS
+    const canvasStream = canvas.captureStream(30);
     canvasStreamRef.current = canvasStream;
 
     const options = MediaRecorder.isTypeSupported("video/webm")
@@ -159,9 +108,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
     const chunks = [];
     recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunks.push(e.data);
-      }
+      if (e.data.size > 0) chunks.push(e.data);
     };
 
     recorder.onstop = () => {
@@ -201,17 +148,18 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
           })
           .then((stream) => {
             streamRef.current = stream;
-            if (!canvasRef.current) {
+
+            if (!videoRef.current) {
               toast.error("Video element not ready");
               return;
             }
-            canvasRef.current.srcObject = stream;
-            canvasRef.current.play();
+
+            videoRef.current.srcObject = stream;
+            videoRef.current.play();
 
             setIsRecording(true);
             setTimer(0);
 
-            // Delay canvas recording until video feed is ready
             setTimeout(() => {
               startCanvasRecording();
               chunkIntervalRef.current = setInterval(
@@ -233,7 +181,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
   const handleStart = () => {
     if (doctor.isVideoProcessing) {
-      // Show alert if video is still processing
       setShowProcessingDialog(true);
       return;
     }
@@ -259,19 +206,10 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         activeRecorderRef.current = null;
       }
 
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      canvasStreamRef.current?.getTracks().forEach((track) => track.stop());
 
-      if (canvasStreamRef.current) {
-        canvasStreamRef.current.getTracks().forEach((track) => track.stop());
-        canvasStreamRef.current = null;
-      }
-
-      if (canvasRef.current) {
-        canvasRef.current.srcObject = null;
-      }
+      videoRef.current.srcObject = null;
     } catch (err) {
       console.error("Stop recording cleanup failed:", err);
     }
@@ -301,21 +239,9 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     return () => {
       clearInterval(chunkIntervalRef.current);
       clearInterval(timerRef.current);
-
-      try {
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((t) => t.stop());
-        }
-      } catch (err) {
-        console.warn("Cleanup error on unmount:", err);
-      }
+      streamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
-
-  const formatTime = (sec) =>
-    `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(
-      sec % 60
-    ).padStart(2, "0")}`;
 
   useEffect(() => {
     const handleOrientation = () => {
@@ -329,6 +255,11 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       window.removeEventListener("orientationchange", handleOrientation);
     };
   }, []);
+
+  const formatTime = (sec) =>
+    `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(
+      sec % 60
+    ).padStart(2, "0")}`;
 
   return (
     <>
@@ -392,13 +323,13 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
             }}
           >
             <video
-              ref={canvasRef}
+              ref={videoRef}
               autoPlay
               muted
               playsInline
-              className="w-full h-full object-cover bg-black"
+              style={{ display: "none" }}
             />
-            <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
+            <canvas ref={canvasRef} style={{ display: "none" }} />
 
             {countdown > 0 && (
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
