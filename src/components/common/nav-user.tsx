@@ -40,7 +40,7 @@ export function NavUser({
     setShowConfirmation(false);
     localStorage.removeItem("authToken"); // Remove auth token
     localStorage.removeItem("user"); // Remove user data
-    navigate("/"); // Redirect to login page
+    navigate("/admin"); // Redirect to login page
   };
 
   return (
