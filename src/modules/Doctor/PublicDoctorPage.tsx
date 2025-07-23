@@ -117,11 +117,11 @@ const PublicDoctorPage = () => {
                         Click the <strong>Finish</strong> button to stop the
                         recording and upload the video.
                       </li>
-                      <li>
-                        If you click <strong>Start</strong> again, your previous
-                        video will be <strong>deleted</strong> and a new
-                        recording will begin.
-                      </li>
+                      {/* <li>
+                        You can record a second video after{" "}
+                        <strong>30 minutes</strong> from your previous
+                        recording.
+                      </li> */}
                       <li>
                         Wait for the upload to complete. A success message will
                         be shown once it's done.

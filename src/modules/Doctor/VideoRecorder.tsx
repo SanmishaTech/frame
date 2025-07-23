@@ -22,6 +22,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [frameColor, setFrameColor] = useState("#c0fbfd");
   const [countdown, setCountdown] = useState(0);
+  const [showProcessingDialog, setShowProcessingDialog] = useState(false);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -160,6 +161,11 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   };
 
   const handleStart = () => {
+    if (doctor.isVideoProcessing) {
+      // Show alert if video is still processing
+      setShowProcessingDialog(true);
+      return;
+    }
     if (isRecording || countdown > 0) return;
     setCountdown(3);
   };
@@ -376,6 +382,26 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => setShowSuccessDialog(false)}>
               Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={showProcessingDialog}
+        onOpenChange={setShowProcessingDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Video Upload In Progress</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please wait for the previous video to finish uploading before
+              starting a new recording.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowProcessingDialog(false)}>
+              OK
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -359,69 +359,83 @@ const DoctorList = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {doctors.map((doctor) => (
-                    <TableRow key={doctor.id}>
-                      <TableCell className="max-w-[250px] break-words whitespace-normal">
-                        {doctor.name}
-                      </TableCell>
-                      <TableCell className="max-w-[250px] break-words whitespace-normal">
-                        {doctor.email || "N/A"}
-                      </TableCell>
-                      <TableCell className="max-w-[250px] break-words whitespace-normal">
-                        {doctor.mobile || "N/A"}
-                      </TableCell>
-                      <TableCell>{doctor.specialty || "N/A"}</TableCell>
-                      <TableCell className="max-w-[250px] break-words whitespace-normal">
-                        {doctor.topic || "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
-                              // onClick={() => {
-                              //   setSelectedVideoUrl(
-                              //     `${backendStaticUrl}/uploads/${doctor.uuid}/${doctor.filepath}`
-                              //   );
-                              //   setSelectedDoctorName(doctor.name);
-                              //   setIsVideoDialogOpen(true);
-                              // }}
-                              onClick={() => {
-                                setSelectedFileList(doctor.filepath || []);
-                                setSelectedDoctor(doctor);
-                                setSelectedFile(null); // Reset selected file
-                                setIsVideoDialogOpen(true);
-                              }}
-                              disabled={!doctor.filepath} // Disable if no video available
-                            >
-                              <Play size={16} />
-                            </button>
-                          </TooltipTrigger>
+                  {doctors.map((doctor) => {
+                    // ✅ Place your logic here
+                    const fileList = Array.isArray(doctor.filepath)
+                      ? doctor.filepath
+                      : [];
+                    const hasFiles = fileList.length > 0;
+                    const isProcessing = doctor.isVideoProcessing;
 
-                          <TooltipContent>
-                            <p>Play Video</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
-                              onClick={() => EmailMutation.mutate(doctor.id)}
-                              disabled={EmailMutation.isPending}
-                            >
-                              <Mail size={16} />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Send Email</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {/* <Tooltip>
+                    const showLoader = isProcessing && !hasFiles;
+                    const disableButton = !hasFiles;
+
+                    let tooltipText = "Play Video";
+                    if (!hasFiles && isProcessing)
+                      tooltipText = "Processing...";
+                    else if (!hasFiles) tooltipText = "No video uploaded";
+                    return (
+                      <TableRow key={doctor.id}>
+                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                          {doctor.name}
+                        </TableCell>
+                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                          {doctor.email || "N/A"}
+                        </TableCell>
+                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                          {doctor.mobile || "N/A"}
+                        </TableCell>
+                        <TableCell>{doctor.specialty || "N/A"}</TableCell>
+                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                          {doctor.topic || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-block">
+                                <button
+                                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                                  onClick={() => {
+                                    setSelectedFileList(fileList);
+                                    setSelectedDoctor(doctor);
+                                    setSelectedFile(null);
+                                    setIsVideoDialogOpen(true);
+                                  }}
+                                  disabled={disableButton}
+                                >
+                                  {showLoader ? (
+                                    <Loader className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Play size={16} />
+                                  )}
+                                </button>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{tooltipText}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+
+                        <TableCell>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                                onClick={() => EmailMutation.mutate(doctor.id)}
+                                disabled={EmailMutation.isPending}
+                              >
+                                <Mail size={16} />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Send Email</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {/* <Tooltip>
                             <TooltipTrigger asChild>
                               <button
                                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
@@ -438,7 +452,7 @@ const DoctorList = () => {
                             </TooltipContent>
                           </Tooltip> */}
 
-                          {/* <Tooltip>
+                            {/* <Tooltip>
                             <TooltipTrigger asChild>
                               <button
                                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
@@ -453,68 +467,69 @@ const DoctorList = () => {
                             </TooltipContent>
                           </Tooltip> */}
 
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                type="button"
-                                className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-                              >
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56">
-                              <DropdownMenuGroup>
-                                <DropdownMenuItem
-                                  onSelect={() => {
-                                    setTimeout(() => {
-                                      confirmDelete(doctor.id);
-                                    }, 0);
-                                  }}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <Trash2 size={16} /> Delete
-                                  </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onSelect={() =>
-                                    navigate(`/doctors/${doctor.id}/edit`)
-                                  }
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <Edit className="h-4 w-4" />
-                                    <span>Edit</span>
-                                  </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onSelect={() => {
-                                    const videoUrl = `${frontendUrl}/doctors/record/${doctor.uuid}`;
-                                    copyToClipboard(videoUrl, doctor.id);
-                                  }}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    {copiedDoctorId === doctor.id ? (
-                                      <>
-                                        <CheckCircle className="h-4 w-4 text-green-600" />
-                                        <span className="text-green-700 font-medium">
-                                          Link Copied
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <ClipboardCopy className="h-4 w-4" />
-                                        <span>Copy Video Link</span>
-                                      </>
-                                    )}
-                                  </div>
-                                </DropdownMenuItem>
-                              </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="w-56">
+                                <DropdownMenuGroup>
+                                  <DropdownMenuItem
+                                    onSelect={() => {
+                                      setTimeout(() => {
+                                        confirmDelete(doctor.id);
+                                      }, 0);
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Trash2 size={16} /> Delete
+                                    </div>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onSelect={() =>
+                                      navigate(`/doctors/${doctor.id}/edit`)
+                                    }
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Edit className="h-4 w-4" />
+                                      <span>Edit</span>
+                                    </div>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onSelect={() => {
+                                      const videoUrl = `${frontendUrl}/doctors/record/${doctor.uuid}`;
+                                      copyToClipboard(videoUrl, doctor.id);
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {copiedDoctorId === doctor.id ? (
+                                        <>
+                                          <CheckCircle className="h-4 w-4 text-green-600" />
+                                          <span className="text-green-700 font-medium">
+                                            Link Copied
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <ClipboardCopy className="h-4 w-4" />
+                                          <span>Copy Video Link</span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </DropdownMenuItem>
+                                </DropdownMenuGroup>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
               <CustomPagination
@@ -615,6 +630,19 @@ const DoctorList = () => {
                       </tr>
                     );
                   })}
+                  {/* 👇 Conditional row when processing */}
+                  {selectedDoctor?.isVideoProcessing && (
+                    <tr className="border-t bg-muted">
+                      <td
+                        colSpan={3}
+                        className="p-4 text-sm flex items-center gap-2 text-muted-foreground"
+                      >
+                        <Loader className="w-4 h-4 animate-spin text-primary" />
+                        New video is currently being processed. It will appear
+                        here once ready.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
