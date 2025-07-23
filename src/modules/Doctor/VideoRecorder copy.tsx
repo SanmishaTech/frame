@@ -13,20 +13,16 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Smartphone,
-  Monitor,
-  CirclePlay,
-  CircleStop,
-  Clock,
-} from "lucide-react";
+import { Smartphone, Monitor, CirclePlay, CircleStop } from "lucide-react";
+
 function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
-  const [orientation, setOrientation] = useState("portrait"); // portrait or landscape
+  const [orientation, setOrientation] = useState("portrait");
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [frameColor, setFrameColor] = useState("#c0fbfd");
   const [countdown, setCountdown] = useState(0);
+  const [showProcessingDialog, setShowProcessingDialog] = useState(false);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -43,7 +39,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] }),
     onError: (e) => {
       console.error("Delete error:", e);
-      // toast.error("Failed to delete previous video");
     },
   });
 
@@ -53,8 +48,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       form.append("video", blob, "chunk.webm");
       return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
-    onError: (e) => {
-      // console.error("Chunk upload error:", e);
+    onError: () => {
       toast.error("Chunk upload failed");
     },
   });
@@ -66,11 +60,10 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         frameColor,
       }),
     onSuccess: () => {
-      toast.success("Video merged successfully");
+      // toast.success("Video merged successfully");
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
     },
-    onError: (e) => {
-      // console.error("Video merge error:", e);
+    onError: () => {
       toast.error("Video merge failed");
     },
   });
@@ -86,7 +79,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     try {
       recorder = new MediaRecorder(streamRef.current, options);
     } catch (err) {
-      // console.error("Failed to create MediaRecorder:", err);
       toast.error("Recording not supported on this browser");
       return;
     }
@@ -103,8 +95,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       try {
         const blob = new Blob(chunks, { type: "video/webm" });
         uploadChunkMutation.mutate(blob);
-      } catch (err) {
-        // console.error("Failed to upload chunk:", err);
+      } catch {
         toast.error("Failed to process video chunk");
       }
     };
@@ -122,15 +113,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     }, 3000);
   };
 
-  const handleStart = () => {
-    if (isRecording || countdown > 0) return;
-  
-    setCountdown(3); // start countdown
-  };
-
-  const handleStart = () => {
-    if (isRecording) return;
-
+  const startActualRecording = () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       toast.error("Your browser does not support camera access");
       return;
@@ -138,11 +121,19 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
     deleteMutation.mutate(undefined, {
       onSuccess: () => {
-        // No orientation-based constraints here, just default
-        const videoConstraints = {
-          facingMode: "user",
-        };
-
+        // const videoConstraints = {
+        //   facingMode: "user",
+        // };
+        const videoConstraints =
+          orientation === "portrait"
+            ? {
+                facingMode: "user",
+                aspectRatio: 9 / 16, // avoid zooming
+              }
+            : {
+                facingMode: "user",
+                aspectRatio: 16 / 9,
+              };
         navigator.mediaDevices
           .getUserMedia({ audio: true, video: videoConstraints })
           .then((stream) => {
@@ -176,6 +167,16 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
           });
       },
     });
+  };
+
+  const handleStart = () => {
+    if (doctor.isVideoProcessing) {
+      // Show alert if video is still processing
+      setShowProcessingDialog(true);
+      return;
+    }
+    if (isRecording || countdown > 0) return;
+    setCountdown(3);
   };
 
   const handleStop = () => {
@@ -216,9 +217,23 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     setTimeout(() => {
       finishMutation.mutate({ orientation, frameColor });
       setShowSuccessDialog(true);
-      if (onVideoSuccess) onVideoSuccess(); // <-- callback triggers the parent
+      if (onVideoSuccess) onVideoSuccess();
     }, 2000);
   };
+
+  useEffect(() => {
+    if (countdown === 0) return;
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === 1) {
+          clearInterval(interval);
+          startActualRecording();
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [countdown]);
 
   useEffect(() => {
     return () => {
@@ -255,149 +270,115 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
   return (
     <>
-      {!isVideoCompleted ? (
-        <>
-          <div className="p-6 bg-slate-100 shadow rounded flex flex-col items-center">
-            {/* Orientation selector */}
-            <div className="w-full mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Frame Color
-              </label>
-              {/* <div className="flex gap-3 w-full">
-                {["#17195E", "red", "green", "blue"].map((color) => {
+      {!isVideoCompleted && (
+        <div className="p-6 bg-slate-100 shadow rounded flex flex-col items-center relative">
+          <div className="w-full mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Frame Color
+            </label>
+            <div className="flex gap-3 w-full">
+              {["#c0fbfd", "#f18bb9", "#ffede4", "#f2d9ef", "#fdf1c9"].map(
+                (color) => {
                   const isSelected = frameColor === color;
                   return (
                     <div
                       key={color}
                       className={`flex-1 h-12 rounded-md ${
-                        isSelected ? "border-1 border-black p-0.5" : ""
+                        isSelected ? "border-2 border-black p-0.5" : ""
                       }`}
                     >
                       <button
                         onClick={() => setFrameColor(color)}
-                        className={`w-full h-full rounded-md transition ${
-                          isSelected
-                            ? "border-2 border-white"
-                            : "border border-transparent"
-                        }`}
+                        className="w-full h-full rounded-md transition"
                         style={{ backgroundColor: color }}
                         type="button"
                         disabled={isRecording}
                       />
                     </div>
                   );
-                })}
-              </div> */}
-              <div className="flex gap-3 w-full">
-                {["#c0fbfd", "#f18bb9", "#ffede4", "#f2d9ef", "#fdf1c9"].map(
-                  (color) => {
-                    const isSelected = frameColor === color;
-                    return (
-                      <div
-                        key={color}
-                        className={`flex-1 h-12 rounded-md ${
-                          isSelected ? "border-2 border-black p-0.5" : ""
-                        }`}
-                      >
-                        <button
-                          onClick={() => setFrameColor(color)}
-                          className={`w-full h-full rounded-md transition ${
-                            isSelected
-                              ? "border-2 border-white"
-                              : "border border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                          type="button"
-                          disabled={isRecording}
-                        />
-                      </div>
-                    );
-                  }
-                )}
-              </div>
+                }
+              )}
             </div>
-            <div className="mb-4 w-full border bg-muted p-1 rounded-md flex gap-1">
-              <Button
-                variant={orientation === "portrait" ? "default" : "ghost"}
-                onClick={() => setOrientation("portrait")}
-                disabled={isRecording}
-                className="flex-1 flex  items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm"
-              >
-                <Smartphone size={16} />
-                Mobile
-              </Button>
-              <Button
-                variant={orientation === "landscape" ? "default" : "ghost"}
-                onClick={() => setOrientation("landscape")}
-                disabled={isRecording}
-                className="flex-1 flex  items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm"
-              >
-                <Monitor size={16} />
-                Desktop
-              </Button>
-            </div>
+          </div>
 
-            <div
-              className={`relative w-full max-w-[400px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300`}
-              style={{
-                aspectRatio: orientation === "portrait" ? "9 / 16" : "16 / 9",
-                maxHeight: "80vh",
-              }}
+          <div className="mb-4 w-full border bg-muted p-1 rounded-md flex gap-1">
+            <Button
+              variant={orientation === "portrait" ? "default" : "ghost"}
+              onClick={() => setOrientation("portrait")}
+              disabled={isRecording}
+              className="flex-1 flex items-center justify-center gap-2 text-sm"
             >
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full object-cover bg-black"
-                style={{ transform: "rotate(0deg)" }}
-              />
-              <div className="absolute top-0 left-0 w-full h-full pointer-events-none rounded-lg" />
-            </div>
+              <Smartphone size={16} />
+              Mobile
+            </Button>
+            <Button
+              variant={orientation === "landscape" ? "default" : "ghost"}
+              onClick={() => setOrientation("landscape")}
+              disabled={isRecording}
+              className="flex-1 flex items-center justify-center gap-2 text-sm"
+            >
+              <Monitor size={16} />
+              Desktop
+            </Button>
+          </div>
 
-            {doctor && (
-              <div className="text-sm text-primary text-center mb-3">
-                <div className="font-medium">{doctor.name}</div>
-                <div className="text-xs">{doctor.topic}</div>
-              </div>
-            )}
-
-            <div className="flex gap-4 mt-2">
-              <Button
-                onClick={handleStart}
-                disabled={isRecording || deleteMutation.isPending}
-                variant="default"
-                className="w-32 bg-green-600 hover:bg-green-700 text-white px-5 py-2 flex items-center justify-center gap-2"
-              >
-                <CirclePlay size={18} />
-                Start
-              </Button>
-              <Button
-                onClick={handleStop}
-                disabled={!isRecording || finishMutation.isPending}
-                variant="destructive"
-                className="w-32 px-5 py-2 flex items-center justify-center gap-2"
-              >
-                <CircleStop size={18} />
-                Finish
-              </Button>
-            </div>
-
-            {isRecording && (
-              <div className="mt-4 font-bold text-lg">
-                Timer: {formatTime(timer)}
-              </div>
-            )}
+          <div
+            className={`relative w-full max-w-[400px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300`}
+            style={{
+              aspectRatio: orientation === "portrait" ? "9 / 16" : "16 / 9",
+              maxHeight: "80vh",
+            }}
+          >
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full object-cover bg-black"
+            />
             {countdown > 0 && (
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
                 <div className="text-white text-6xl font-bold">{countdown}</div>
               </div>
             )}
           </div>
-        </>
-      ) : (
-        ""
+
+          {doctor && (
+            <div className="text-sm text-primary text-center mb-3">
+              <div className="font-medium">{doctor.name}</div>
+              <div className="text-xs">{doctor.topic}</div>
+            </div>
+          )}
+
+          <div className="flex gap-4 mt-2">
+            <Button
+              onClick={handleStart}
+              disabled={isRecording || deleteMutation.isPending}
+              variant="default"
+              className="w-32 bg-green-600 hover:bg-green-700 text-white"
+            >
+              <CirclePlay size={18} />
+              Start
+            </Button>
+            <Button
+              onClick={handleStop}
+              disabled={!isRecording || finishMutation.isPending}
+              variant="destructive"
+              className="w-32"
+            >
+              <CircleStop size={18} />
+              Finish
+            </Button>
+          </div>
+
+          {isRecording && (
+            <div className="mt-4 font-bold text-lg">
+              Timer: {formatTime(timer)}
+            </div>
+          )}
+        </div>
       )}
+
       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -410,6 +391,26 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => setShowSuccessDialog(false)}>
               Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={showProcessingDialog}
+        onOpenChange={setShowProcessingDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Video Upload In Progress</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please wait for the previous video to finish uploading before
+              starting a new recording.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowProcessingDialog(false)}>
+              OK
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

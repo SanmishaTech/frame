@@ -329,13 +329,23 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
               maxHeight: "80vh",
             }}
           >
-            <video
+            {/* <video
               ref={videoRef}
               autoPlay
               muted
               playsInline
               className="w-full h-full object-cover bg-black"
+            /> */}
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className={`w-full h-full object-cover bg-black ${
+                orientation === "portrait" ? "rotate-90 transform" : ""
+              }`}
             />
+
             {countdown > 0 && (
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
                 <div className="text-white text-6xl font-bold">{countdown}</div>
