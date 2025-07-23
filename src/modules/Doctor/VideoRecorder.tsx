@@ -121,10 +121,21 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
     deleteMutation.mutate(undefined, {
       onSuccess: () => {
-        const videoConstraints = {
-          facingMode: "user",
-        };
-
+        // const videoConstraints = {
+        //   facingMode: "user",
+        // };
+        const videoConstraints =
+          orientation === "portrait"
+            ? {
+                facingMode: "user",
+                width: { ideal: 720 },
+                height: { ideal: 1280 },
+              }
+            : {
+                facingMode: "user",
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              };
         navigator.mediaDevices
           .getUserMedia({ audio: true, video: videoConstraints })
           .then((stream) => {
