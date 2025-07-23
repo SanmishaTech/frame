@@ -128,13 +128,11 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
           orientation === "portrait"
             ? {
                 facingMode: "user",
-                width: { ideal: 720 },
-                height: { ideal: 1280 },
+                aspectRatio: 9 / 16, // avoid zooming
               }
             : {
                 facingMode: "user",
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
+                aspectRatio: 16 / 9,
               };
         navigator.mediaDevices
           .getUserMedia({ audio: true, video: videoConstraints })
