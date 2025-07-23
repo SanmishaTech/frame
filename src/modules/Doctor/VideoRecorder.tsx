@@ -391,13 +391,13 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
               maxHeight: "80vh",
             }}
           >
-            {/* <video
+            <video
               ref={canvasRef}
               autoPlay
               muted
               playsInline
               className="w-full h-full object-cover bg-black"
-            /> */}
+            />
             <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
 
             {countdown > 0 && (
