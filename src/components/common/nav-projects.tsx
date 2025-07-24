@@ -39,7 +39,7 @@ export function NavProjects({
   if (!projects.length) return null;
 
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+    <SidebarGroup className="mt-10 group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Management</SidebarGroupLabel>
       <SidebarMenu>
         {projects.map((item) => (

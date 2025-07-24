@@ -24,6 +24,7 @@ import "./App.css";
 import DoctorList from "./modules/Doctor/DoctorList";
 import CreateDoctor from "./modules/Doctor/CreateDoctor";
 import EditDoctor from "./modules/Doctor/EditDoctor";
+import DoctorReport from "./modules/Report/doctorReport";
 import PublicDoctorPage from "./modules/Doctor/PublicDoctorPage";
 import GuestRoute from "./components/common/guest-route";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -59,6 +60,15 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Reports */}
+              <Route
+                path="/reports/doctors"
+                element={
+                  <ProtectedRoute>
+                    <DoctorReport />
                   </ProtectedRoute>
                 }
               />

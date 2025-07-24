@@ -31,40 +31,10 @@ const ROUTE_MAP: Record<string, RouteConfig> = {
     label: "Users",
     path: "/users",
   },
-  agencies: {
+  doctors: {
     parent: "Management",
-    label: "Agencies",
-    path: "/agencies",
-  },
-  packages: {
-    parent: "Masters",
-    label: "Packages",
-    path: "/packages",
-  },
-  countries: {
-    parent: "Masters",
-    label: "Countries",
-    path: "/countries",
-  },
-  states: {
-    parent: "Masters",
-    label: "States",
-    path: "/states",
-  },
-  cities: {
-    parent: "Masters",
-    label: "Cities",
-    path: "/cities",
-  },
-  sectors: {
-    parent: "Masters",
-    label: "Sectors",
-    path: "/sectors",
-  },
-  branches: {
-    parent: "Masters",
-    label: "Branches",
-    path: "/branches",
+    label: "Doctors",
+    path: "/doctors",
   },
 };
 
