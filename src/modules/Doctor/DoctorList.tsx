@@ -425,59 +425,6 @@ const DoctorList = () => {
                             <div>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button
-                                    onClick={async () => {
-                                      const fileArray = doctor.filepath; // assumed to be an array
-                                      const latestFile =
-                                        Array.isArray(fileArray) &&
-                                        fileArray.length > 0
-                                          ? fileArray[fileArray.length - 1]
-                                          : null;
-
-                                      if (!latestFile) {
-                                        toast.error(
-                                          "No file available to download."
-                                        );
-                                        return;
-                                      }
-
-                                      const fileUrl = `${backendStaticUrl}/uploads/${doctor.uuid}/${latestFile}`;
-                                      try {
-                                        const response = await fetch(fileUrl);
-                                        const blob = await response.blob();
-                                        const url =
-                                          window.URL.createObjectURL(blob);
-
-                                        const originalFileName =
-                                          latestFile.split("/").pop() ||
-                                          "video.mp4";
-
-                                        const link =
-                                          document.createElement("a");
-                                        link.href = url;
-                                        link.download = originalFileName;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                      } catch (error) {
-                                        toast.error(
-                                          "Failed to download video."
-                                        );
-                                      }
-                                    }}
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Download Video</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </div>
-                            <div>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
                                   <button
                                     className="inline-flex items-center text-xs justify-center gap-2 whitespace-nowrap rounded-md text-xs font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
                                     onClick={() =>
@@ -542,6 +489,59 @@ const DoctorList = () => {
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>{tooltipText}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                            <div>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    onClick={async () => {
+                                      const fileArray = doctor.filepath; // assumed to be an array
+                                      const latestFile =
+                                        Array.isArray(fileArray) &&
+                                        fileArray.length > 0
+                                          ? fileArray[fileArray.length - 1]
+                                          : null;
+
+                                      if (!latestFile) {
+                                        toast.error(
+                                          "No file available to download."
+                                        );
+                                        return;
+                                      }
+
+                                      const fileUrl = `${backendStaticUrl}/uploads/${doctor.uuid}/${latestFile}`;
+                                      try {
+                                        const response = await fetch(fileUrl);
+                                        const blob = await response.blob();
+                                        const url =
+                                          window.URL.createObjectURL(blob);
+
+                                        const originalFileName =
+                                          latestFile.split("/").pop() ||
+                                          "video.mp4";
+
+                                        const link =
+                                          document.createElement("a");
+                                        link.href = url;
+                                        link.download = originalFileName;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                      } catch (error) {
+                                        toast.error(
+                                          "Failed to download video."
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Download Video</p>
                                 </TooltipContent>
                               </Tooltip>
                             </div>
