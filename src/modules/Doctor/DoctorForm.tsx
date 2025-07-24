@@ -12,6 +12,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Select,
   SelectTrigger,
@@ -22,7 +36,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import Validate from "@/lib/Handlevalidation";
 
-import { LoaderCircle } from "lucide-react"; // Import the LoaderCircle icon
+import { LoaderCircle, ChevronsUpDown, Check } from "lucide-react"; // Import the LoaderCircle icon
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { get } from "@/services/apiService";
@@ -66,15 +80,41 @@ export const FormSchema = z.object({
     .string()
     .min(1, "Topic cannot be left blank.")
     .max(200, "Topic must not exceed 200 characters."),
+  // city: z
+  //   .string()
+  //   .max(100, "City must not exceed 100 characters.")
+  //   .optional()
+  //   .or(z.literal("")), // Accept empty string as optional
+  // state: z
+  //   .string()
+  //   .max(100, "State must not exceed 100 characters.")
+  //   .optional()
+  //   .or(z.literal("")), // Accept empty string as optional
+  state: z
+    .string()
+    .min(1, "State cannot be left blank.") // Ensuring minimum length of 2
+    .max(100, "State must not exceed 100 characters.")
+    .refine((val) => /^[A-Za-z\s\u0900-\u097F]+$/.test(val), {
+      message: "State can only contain letters.",
+    }),
+  city: z
+    .string()
+    .min(1, "City cannot be left blank.") // Ensuring minimum length of 2
+    .max(100, "City must not exceed 100 characters.")
+    .refine((val) => /^[A-Za-z\s\u0900-\u097F]+$/.test(val), {
+      message: "City can only contain letters.",
+    }),
 });
 
 type FormInputs = z.infer<typeof FormSchema>;
 
 const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
   const { id } = useParams<{ id: string }>();
+  const [openState, setOpenState] = useState<boolean>(false);
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const MAHARASHTRA = "MAHARASHTRA"; // Assuming this is the state you want to set by default
 
   const defaultValues: z.infer<typeof FormSchema> = {
     name: "",
@@ -84,6 +124,8 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
     designation: "", // optional field, using empty string
     specialty: "",
     topic: "",
+    city: "",
+    state: "",
   };
 
   const {
@@ -100,6 +142,28 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
     mode: "onChange", // 👈 triggers validation on each change
     reValidateMode: "onChange", // 👈 re-validate on every change
   });
+
+  // states
+  const { data: states, isLoading: isStatesLoading } = useQuery({
+    queryKey: ["states"],
+    queryFn: async () => {
+      const response = await get(`/states/all`);
+      return response;
+    },
+  });
+
+  useEffect(() => {
+    if (states && states.length > 0) {
+      // Find Maharashtra by label (or by your exact API property)
+      const maharashtraState = states.find(
+        (state) => state.label === MAHARASHTRA
+      );
+
+      if (maharashtraState) {
+        setValue("state", maharashtraState.value);
+      }
+    }
+  }, [states, setValue]);
 
   const { data: editDoctorData, isLoading: isDoctorLoading } = useQuery({
     queryKey: ["editDoctorData", id],
@@ -122,6 +186,8 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
           : "",
         specialty: editDoctorData?.specialty ? editDoctorData.specialty : "",
         topic: editDoctorData?.topic ? editDoctorData.topic : "",
+        city: editDoctorData?.city ? editDoctorData.city : "",
+        state: editDoctorData?.state ? editDoctorData.state : "",
       });
     }
   }, [editDoctorData, reset]);
@@ -262,6 +328,105 @@ const DoctorForm = ({ mode }: { mode: "create" | "edit" }) => {
                 {errors.mobile && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.mobile.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="state"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  State <span className="text-red-500">*</span>
+                </Label>
+                {/* <div className="w-full pt-1"> */}
+                <Controller
+                  name="state"
+                  control={control}
+                  render={({ field }) => (
+                    <Popover open={openState} onOpenChange={setOpenState}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openState}
+                          className="w-[310px] justify-between"
+                          onClick={() => setOpenState((prev) => !prev)}
+                        >
+                          {field.value
+                            ? states.find((s) => s.value === field.value)?.label
+                            : "Select State..."}
+                          <ChevronsUpDown className="opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+
+                      <PopoverContent className="w-[310px] p-0">
+                        <Command>
+                          <CommandInput
+                            placeholder="Search state..."
+                            className="h-9"
+                          />
+                          <CommandList>
+                            <CommandEmpty>No state found.</CommandEmpty>
+                            <CommandGroup>
+                              {states?.map((state) => (
+                                <CommandItem
+                                  key={state.value}
+                                  value={state.value}
+                                  onSelect={(currentValue) => {
+                                    setValue("state", currentValue);
+                                    setOpenState(false);
+                                  }}
+                                >
+                                  {state.label}
+                                  <Check
+                                    className={cn(
+                                      "ml-auto",
+                                      state.value === field.value
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                />
+
+                {/* </div> */}
+                {errors.state && (
+                  <p className="text-destructive text-xs absolute -bottom-5">
+                    {errors.state.message}
+                  </p>
+                )}
+              </div>
+
+              {/* City */}
+              <div className="">
+                <Label
+                  htmlFor="city"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  City <span className="text-red-500">*</span>
+                </Label>
+                <Controller
+                  name="city"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="city"
+                      placeholder="Enter doctor's city"
+                      {...field}
+                    />
+                  )}
+                />
+                {errors.city && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.city.message}
                   </p>
                 )}
               </div>

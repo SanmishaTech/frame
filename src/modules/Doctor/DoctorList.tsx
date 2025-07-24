@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button, Input } from "@/components/ui";
+import dayjs from "dayjs";
+
 import {
   Select,
   SelectTrigger,
@@ -224,7 +226,7 @@ const DoctorList = () => {
         Doctor Management
       </h1>
       <Card className="mx-auto mt-6 sm:mt-10">
-        <CardContent>
+        <CardContent className="text-sm">
           {/* Toolbar */}
           <div className="flex flex-wrap gap-4 mb-6">
             {/* Search Input */}
@@ -245,7 +247,7 @@ const DoctorList = () => {
                 className="bg-primary hover:bg-primary/90 text-white shadow-sm transition-all duration-200 hover:shadow-md"
               >
                 <PlusCircle className="mr-2 h-5 w-5" />
-                Add Doctor
+                Add Profile
               </Button>
             </div>
           </div>
@@ -263,7 +265,7 @@ const DoctorList = () => {
             </div>
           ) : doctors.length > 0 ? (
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="">
                 <TableHeader>
                   <TableRow>
                     <TableHead
@@ -271,7 +273,7 @@ const DoctorList = () => {
                       className="cursor-pointer max-w-[250px] break-words whitespace-normal"
                     >
                       <div className="flex items-center">
-                        <span>Doctor Name</span>
+                        <span>Name</span>
                         {sortBy === "name" && (
                           <span className="ml-1">
                             {sortOrder === "asc" ? (
@@ -285,46 +287,29 @@ const DoctorList = () => {
                     </TableHead>
 
                     <TableHead
-                      onClick={() => handleSort("email")}
-                      className="cursor-pointer max-w-[250px] break-words whitespace-normal"
-                    >
-                      <div className="flex items-center">
-                        <span>Email</span>
-                        {sortBy === "email" && (
-                          <span className="ml-1">
-                            {sortOrder === "asc" ? (
-                              <ChevronUp size={16} />
-                            ) : (
-                              <ChevronDown size={16} />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      onClick={() => handleSort("mobile")}
-                      className="cursor-pointer max-w-[250px] break-words whitespace-normal"
-                    >
-                      <div className="flex items-center">
-                        <span>Mobile</span>
-                        {sortBy === "mobile" && (
-                          <span className="ml-1">
-                            {sortOrder === "asc" ? (
-                              <ChevronUp size={16} />
-                            ) : (
-                              <ChevronDown size={16} />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead
                       onClick={() => handleSort("specialty")}
                       className="cursor-pointer"
                     >
                       <div className="flex items-center">
                         <span>Specialty</span>
                         {sortBy === "specialty" && (
+                          <span className="ml-1">
+                            {sortOrder === "asc" ? (
+                              <ChevronUp size={16} />
+                            ) : (
+                              <ChevronDown size={16} />
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort("state")}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex items-center">
+                        <span>State</span>
+                        {sortBy === "state" && (
                           <span className="ml-1">
                             {sortOrder === "asc" ? (
                               <ChevronUp size={16} />
@@ -353,8 +338,30 @@ const DoctorList = () => {
                       </div>
                     </TableHead>
 
+                    <TableHead
+                      onClick={() => handleSort("uploadedAt")}
+                      className=" max-w-[250px] break-words whitespace-normal"
+                    >
+                      <div className="flex items-center">
+                        <span>Uploaded On</span>
+                        {sortBy === "uploadedAt" && (
+                          <span className="ml-1">
+                            {sortOrder === "asc" ? (
+                              <ChevronUp size={16} />
+                            ) : (
+                              <ChevronDown size={16} />
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead className=" max-w-[250px] break-words whitespace-normal">
+                      <div className="flex items-center">
+                        <span>Download</span>
+                      </div>
+                    </TableHead>
+                    <TableHead>Send Invite</TableHead>
                     <TableHead>Video</TableHead>
-                    <TableHead>Email</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -377,20 +384,101 @@ const DoctorList = () => {
                     return (
                       <TableRow key={doctor.id}>
                         <TableCell className="max-w-[250px] break-words whitespace-normal">
-                          {doctor.name}
+                          <div className="flex flex-col">
+                            <span className="font-bold">{doctor.name}</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {doctor.email}
+                            </span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {doctor.mobile}
+                            </span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {doctor.degree}
+                            </span>
+                          </div>
                         </TableCell>
-                        <TableCell className="max-w-[250px] break-words whitespace-normal">
-                          {doctor.email || "N/A"}
-                        </TableCell>
-                        <TableCell className="max-w-[250px] break-words whitespace-normal">
-                          {doctor.mobile || "N/A"}
-                        </TableCell>
+
                         <TableCell>{doctor.specialty || "N/A"}</TableCell>
+                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                          {doctor.state || "N/A"}
+                        </TableCell>
                         <TableCell className="max-w-[250px] break-words whitespace-normal">
                           {doctor.topic || "N/A"}
                         </TableCell>
+                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                          {doctor.uploadedAt ? (
+                            <>
+                              <div>
+                                {dayjs(doctor.uploadedAt).format("DD/MM/YYYY")}
+                              </div>
+                              <div className="text-muted-foreground text-sm">
+                                {dayjs(doctor.uploadedAt).format("HH:mm:ss")}
+                              </div>
+                            </>
+                          ) : (
+                            "N/A"
+                          )}
+                        </TableCell>
+                        {/* start */}
+                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                          <Button
+                            onClick={async () => {
+                              const fileArray = doctor.filepath; // assumed to be an array
+                              const latestFile =
+                                Array.isArray(fileArray) && fileArray.length > 0
+                                  ? fileArray[fileArray.length - 1]
+                                  : null;
+
+                              if (!latestFile) {
+                                toast.error("No file available to download.");
+                                return;
+                              }
+
+                              const fileUrl = `${backendStaticUrl}/uploads/${doctor.uuid}/${latestFile}`;
+                              try {
+                                const response = await fetch(fileUrl);
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+
+                                const originalFileName =
+                                  latestFile.split("/").pop() || "video.mp4";
+
+                                const link = document.createElement("a");
+                                link.href = url;
+                                link.download = originalFileName;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                window.URL.revokeObjectURL(url);
+                              } catch (error) {
+                                toast.error("Failed to download video.");
+                              }
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+
+                        {/*end  */}
+
                         <TableCell>
                           <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                                onClick={() => EmailMutation.mutate(doctor.id)}
+                                disabled={EmailMutation.isPending}
+                              >
+                                <Mail size={16} />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Send Email</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell>
+                          {/* <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="inline-block">
                                 <button
@@ -414,25 +502,59 @@ const DoctorList = () => {
                             <TooltipContent>
                               <p>{tooltipText}</p>
                             </TooltipContent>
-                          </Tooltip>
-                        </TableCell>
-
-                        <TableCell>
+                          </Tooltip> */}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <button
-                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
-                                onClick={() => EmailMutation.mutate(doctor.id)}
-                                disabled={EmailMutation.isPending}
-                              >
-                                <Mail size={16} />
-                              </button>
+                              <span className="inline-block">
+                                <button
+                                  className={`
+                                        inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all 
+                                        disabled:pointer-events-none disabled:opacity-50
+                                        [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0
+                                        outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] 
+                                        aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive 
+                                        shadow-xs h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5
+                                        ${
+                                          disableButton
+                                            ? "bg-red-200 border border-2 border-red-700"
+                                            : "bg-green-200 border border-2 border-green-600"
+                                        }
+                                      `}
+                                  onClick={() => {
+                                    setSelectedFileList(fileList);
+                                    setSelectedDoctor(doctor);
+                                    setSelectedFile(null);
+                                    setIsVideoDialogOpen(true);
+                                  }}
+                                  disabled={disableButton}
+                                >
+                                  {showLoader ? (
+                                    <Loader
+                                      className={`h-4 w-4 animate-spin ${
+                                        disableButton
+                                          ? "text-yellow-500"
+                                          : "text-yellow-500"
+                                      }`}
+                                    />
+                                  ) : (
+                                    <Play
+                                      size={16}
+                                      className={`${
+                                        disableButton
+                                          ? "text-red-700"
+                                          : "text-green-700"
+                                      }`}
+                                    />
+                                  )}
+                                </button>
+                              </span>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Send Email</p>
+                              <p>{tooltipText}</p>
                             </TooltipContent>
                           </Tooltip>
                         </TableCell>
+
                         <TableCell>
                           <div className="flex gap-2">
                             {/* <Tooltip>
