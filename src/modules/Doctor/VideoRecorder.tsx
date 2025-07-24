@@ -24,13 +24,10 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [countdown, setCountdown] = useState(0);
   const [showProcessingDialog, setShowProcessingDialog] = useState(false);
 
-  const videoRef = useRef(null); // For camera stream
-  const canvasRef = useRef(null); // For recording rotated
+  const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const canvasStreamRef = useRef(null);
   const chunkIntervalRef = useRef(null);
   const timerRef = useRef(null);
-  const drawingIntervalRef = useRef(null);
   const activeRecorderRef = useRef(null);
 
   const queryClient = useQueryClient();
@@ -63,6 +60,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         frameColor,
       }),
     onSuccess: () => {
+      // toast.success("Video merged successfully");
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
     },
     onError: () => {
@@ -70,29 +68,8 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     },
   });
 
-  const startCanvasRecording = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    const video = videoRef.current;
-
-    const width = 720;
-    const height = 1280;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    drawingIntervalRef.current = setInterval(() => {
-      ctx.clearRect(0, 0, width, height);
-
-      ctx.save();
-      ctx.translate(width / 2, height / 2);
-      ctx.rotate((90 * Math.PI) / 180); // Rotate for portrait
-      ctx.drawImage(video, -height / 2, -width / 2, height, width);
-      ctx.restore();
-    }, 30); // 30 FPS
-
-    const canvasStream = canvas.captureStream(30);
-    canvasStreamRef.current = canvasStream;
+  const startChunkRecording = () => {
+    if (!streamRef.current) return;
 
     const options = MediaRecorder.isTypeSupported("video/webm")
       ? { mimeType: "video/webm" }
@@ -100,15 +77,18 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
     let recorder;
     try {
-      recorder = new MediaRecorder(canvasStream, options);
+      recorder = new MediaRecorder(streamRef.current, options);
     } catch (err) {
-      toast.error("Canvas recording not supported.");
+      toast.error("Recording not supported on this browser");
       return;
     }
 
     const chunks = [];
+
     recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunks.push(e.data);
+      if (e.data.size > 0) {
+        chunks.push(e.data);
+      }
     };
 
     recorder.onstop = () => {
@@ -116,7 +96,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         const blob = new Blob(chunks, { type: "video/webm" });
         uploadChunkMutation.mutate(blob);
       } catch {
-        toast.error("Failed to process canvas chunk");
+        toast.error("Failed to process video chunk");
       }
     };
 
@@ -141,39 +121,49 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
     deleteMutation.mutate(undefined, {
       onSuccess: () => {
+        // const videoConstraints = {
+        //   facingMode: "user",
+        // };
+        const videoConstraints =
+          orientation === "portrait"
+            ? {
+                facingMode: "user",
+                aspectRatio: 9 / 16, // avoid zooming
+              }
+            : {
+                facingMode: "user",
+                aspectRatio: 16 / 9,
+              };
         navigator.mediaDevices
-          .getUserMedia({
-            audio: true,
-            video: { facingMode: "user" },
-          })
+          .getUserMedia({ audio: true, video: videoConstraints })
           .then((stream) => {
-            streamRef.current = stream;
-
             if (!videoRef.current) {
               toast.error("Video element not ready");
               return;
             }
 
+            streamRef.current = stream;
             videoRef.current.srcObject = stream;
             videoRef.current.play();
 
             setIsRecording(true);
             setTimer(0);
 
-            setTimeout(() => {
-              startCanvasRecording();
-              chunkIntervalRef.current = setInterval(
-                startCanvasRecording,
-                3000
-              );
-              timerRef.current = setInterval(() => {
-                setTimer((t) => t + 1);
-              }, 1000);
-            }, 500);
+            startChunkRecording();
+            chunkIntervalRef.current = setInterval(startChunkRecording, 3000);
+            timerRef.current = setInterval(() => {
+              setTimer((t) => t + 1);
+            }, 1000);
           })
           .catch((err) => {
             console.error("getUserMedia error:", err);
-            toast.error("Camera access denied");
+            if (err.name === "NotAllowedError") {
+              toast.error("Permission denied for camera/microphone.");
+            } else if (err.name === "NotFoundError") {
+              toast.error("No camera/microphone found.");
+            } else {
+              toast.error("Failed to access media devices.");
+            }
           });
       },
     });
@@ -181,6 +171,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
   const handleStart = () => {
     if (doctor.isVideoProcessing) {
+      // Show alert if video is still processing
       setShowProcessingDialog(true);
       return;
     }
@@ -194,7 +185,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     setIsRecording(false);
     clearInterval(chunkIntervalRef.current);
     clearInterval(timerRef.current);
-    clearInterval(drawingIntervalRef.current);
     setTimer(0);
 
     try {
@@ -206,10 +196,20 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         activeRecorderRef.current = null;
       }
 
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      canvasStreamRef.current?.getTracks().forEach((track) => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          try {
+            track.stop();
+          } catch (err) {
+            console.warn("Track stop failed:", err);
+          }
+        });
+        streamRef.current = null;
+      }
 
-      videoRef.current.srcObject = null;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
     } catch (err) {
       console.error("Stop recording cleanup failed:", err);
     }
@@ -239,9 +239,21 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     return () => {
       clearInterval(chunkIntervalRef.current);
       clearInterval(timerRef.current);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+
+      try {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((t) => t.stop());
+        }
+      } catch (err) {
+        console.warn("Cleanup error on unmount:", err);
+      }
     };
   }, []);
+
+  const formatTime = (sec) =>
+    `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(
+      sec % 60
+    ).padStart(2, "0")}`;
 
   useEffect(() => {
     const handleOrientation = () => {
@@ -255,11 +267,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       window.removeEventListener("orientationchange", handleOrientation);
     };
   }, []);
-
-  const formatTime = (sec) =>
-    `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(
-      sec % 60
-    ).padStart(2, "0")}`;
 
   return (
     <>
@@ -327,10 +334,8 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
               autoPlay
               muted
               playsInline
-              style={{ display: "none" }}
+              className="w-full h-full object-cover bg-black"
             />
-            <canvas ref={canvasRef} style={{ display: "none" }} />
-
             {countdown > 0 && (
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
                 <div className="text-white text-6xl font-bold">{countdown}</div>
