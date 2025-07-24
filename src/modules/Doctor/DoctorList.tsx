@@ -66,6 +66,9 @@ import {
   Search,
   PlusCircle,
   MoreHorizontal,
+  User2,
+  Phone,
+  GraduationCap,
   XCircle,
 } from "lucide-react";
 import ConfirmDialog from "@/components/common/confirm-dialog";
@@ -226,7 +229,7 @@ const DoctorList = () => {
         Doctor Management
       </h1>
       <Card className="mx-auto mt-6 sm:mt-10">
-        <CardContent className="text-sm">
+        <CardContent className="text-xs">
           {/* Toolbar */}
           <div className="flex flex-wrap gap-4 mb-6">
             {/* Search Input */}
@@ -272,7 +275,7 @@ const DoctorList = () => {
                       onClick={() => handleSort("name")}
                       className="cursor-pointer max-w-[250px] break-words whitespace-normal"
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center text-xs">
                         <span>Name</span>
                         {sortBy === "name" && (
                           <span className="ml-1">
@@ -288,9 +291,9 @@ const DoctorList = () => {
 
                     <TableHead
                       onClick={() => handleSort("specialty")}
-                      className="cursor-pointer"
+                      className="cursor-pointer text-xs"
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center ">
                         <span>Specialty</span>
                         {sortBy === "specialty" && (
                           <span className="ml-1">
@@ -307,7 +310,7 @@ const DoctorList = () => {
                       onClick={() => handleSort("state")}
                       className="cursor-pointer"
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center text-xs">
                         <span>State</span>
                         {sortBy === "state" && (
                           <span className="ml-1">
@@ -324,7 +327,7 @@ const DoctorList = () => {
                       onClick={() => handleSort("topic")}
                       className="cursor-pointer"
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center text-xs">
                         <span>Topic</span>
                         {sortBy === "topic" && (
                           <span className="ml-1">
@@ -342,7 +345,7 @@ const DoctorList = () => {
                       onClick={() => handleSort("uploadedAt")}
                       className=" max-w-[250px] break-words whitespace-normal"
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center text-xs">
                         <span>Uploaded On</span>
                         {sortBy === "uploadedAt" && (
                           <span className="ml-1">
@@ -355,14 +358,14 @@ const DoctorList = () => {
                         )}
                       </div>
                     </TableHead>
-                    <TableHead className=" max-w-[250px] break-words whitespace-normal">
+                    <TableHead className=" max-w-[250px] text-xs break-words whitespace-normal">
                       <div className="flex items-center">
                         <span>Download</span>
                       </div>
                     </TableHead>
-                    <TableHead>Send Invite</TableHead>
-                    <TableHead>Video</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-xs">Send Invite</TableHead>
+                    <TableHead className="text-xs">Video</TableHead>
+                    <TableHead className="text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -383,35 +386,44 @@ const DoctorList = () => {
                     else if (!hasFiles) tooltipText = "No video uploaded";
                     return (
                       <TableRow key={doctor.id}>
-                        <TableCell className="max-w-[250px] break-words whitespace-normal">
-                          <div className="flex flex-col">
-                            <span className="font-bold">{doctor.name}</span>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {doctor.email}
-                            </span>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {doctor.mobile}
-                            </span>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {doctor.degree}
-                            </span>
+                        <TableCell className="max-w-[250px] break-words whitespace-normal py-3">
+                          <div className="flex flex-col gap-1 text-xs text-gray-800 dark:text-gray-100">
+                            <div className="flex items-start gap-2">
+                              <User2 className="w-4 h-4 mt-[2px] text-muted-foreground" />
+                              <span className="font-bold">{doctor.name}</span>
+                            </div>
+
+                            <div className="flex items-start gap-2 text-gray-600 dark:text-gray-400">
+                              <Mail className="w-4 h-4 mt-[2px]" />
+                              <span className="break-all">{doctor.email}</span>
+                            </div>
+
+                            <div className="flex items-start gap-2 text-gray-600 dark:text-gray-400">
+                              <Phone className="w-4 h-4 mt-[2px]" />
+                              <span>{doctor.mobile}</span>
+                            </div>
+
+                            <div className="flex items-start gap-2 text-gray-600 dark:text-gray-400">
+                              <GraduationCap className="w-4 h-4 mt-[2px]" />
+                              <span>{doctor.degree}</span>
+                            </div>
                           </div>
                         </TableCell>
 
                         <TableCell>{doctor.specialty || "N/A"}</TableCell>
-                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                        <TableCell className="max-w-[250px] text-xs break-words whitespace-normal">
                           {doctor.state || "N/A"}
                         </TableCell>
-                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                        <TableCell className="max-w-[250px] text-xs break-words whitespace-normal">
                           {doctor.topic || "N/A"}
                         </TableCell>
-                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                        <TableCell className="max-w-[250px] text-xs break-words whitespace-normal">
                           {doctor.uploadedAt ? (
                             <>
                               <div>
                                 {dayjs(doctor.uploadedAt).format("DD/MM/YYYY")}
                               </div>
-                              <div className="text-muted-foreground text-sm">
+                              <div className="text-muted-foreground text-xs">
                                 {dayjs(doctor.uploadedAt).format("HH:mm:ss")}
                               </div>
                             </>
@@ -420,7 +432,7 @@ const DoctorList = () => {
                           )}
                         </TableCell>
                         {/* start */}
-                        <TableCell className="max-w-[250px] break-words whitespace-normal">
+                        <TableCell className="max-w-[250px] text-xs break-words whitespace-normal">
                           <Button
                             onClick={async () => {
                               const fileArray = doctor.filepath; // assumed to be an array
@@ -465,7 +477,7 @@ const DoctorList = () => {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <button
-                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                                className="inline-flex items-center text-xs justify-center gap-2 whitespace-nowrap rounded-md text-xs font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
                                 onClick={() => EmailMutation.mutate(doctor.id)}
                                 disabled={EmailMutation.isPending}
                               >
@@ -482,7 +494,7 @@ const DoctorList = () => {
                             <TooltipTrigger asChild>
                               <span className="inline-block">
                                 <button
-                                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
                                   onClick={() => {
                                     setSelectedFileList(fileList);
                                     setSelectedDoctor(doctor);
@@ -508,7 +520,7 @@ const DoctorList = () => {
                               <span className="inline-block">
                                 <button
                                   className={`
-                                        inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all 
+                                        inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs font-medium transition-all 
                                         disabled:pointer-events-none disabled:opacity-50
                                         [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0
                                         outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] 
@@ -560,7 +572,7 @@ const DoctorList = () => {
                             {/* <Tooltip>
                             <TooltipTrigger asChild>
                               <button
-                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
                                 onClick={() =>
                                   navigate(`/doctors/${doctor.id}/edit`)
                                 }
@@ -577,7 +589,7 @@ const DoctorList = () => {
                             {/* <Tooltip>
                             <TooltipTrigger asChild>
                               <button
-                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
                                 onClick={() => confirmDelete(doctor.id)}
                               >
                                 <Trash2 size={16} />
@@ -692,7 +704,7 @@ const DoctorList = () => {
             </div>
           ) : (
             <div className="overflow-x-auto  max-h-[400px] overflow-y-auto mt-2">
-              <table className="min-w-full border text-sm">
+              <table className="min-w-full border text-xs">
                 <thead className="">
                   <tr>
                     <th className="p-2 text-left border-b">Filename</th>
@@ -757,7 +769,7 @@ const DoctorList = () => {
                     <tr className="border-t bg-muted">
                       <td
                         colSpan={3}
-                        className="p-4 text-sm flex items-center gap-2 text-muted-foreground"
+                        className="p-4 text-xs flex items-center gap-2 text-muted-foreground"
                       >
                         <Loader className="w-4 h-4 animate-spin text-primary" />
                         New video is currently being processed. It will appear

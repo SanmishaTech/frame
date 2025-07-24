@@ -283,12 +283,12 @@ const DoctorReport = () => {
 
   return (
     <div className="mt-2 p-6">
-      <h1 className="text-2xl font-bold mb-6">Doctor Report</h1>
+      <h1 className="text-2xl font-bold mb-6">Video Report</h1>
 
       <Card className="w-full mx-auto mt-10">
         <CardHeader>
           <CardTitle className="text-xl font-semibold">
-            Download Doctor Report
+            Download Doctor Video Report
           </CardTitle>
           <CardDescription>
             Select the date range and state to download an Excel report of

@@ -79,7 +79,7 @@ const initialData = {
           url: "#",
           icon: SquareTerminal,
           isActive: true,
-          items: [{ title: "Doctor Reports", url: "/reports/doctors" }],
+          items: [{ title: "Video Report", url: "/reports/doctors" }],
         },
       ],
     },
