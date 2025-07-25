@@ -3,7 +3,6 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -12,16 +11,15 @@ export default defineConfig({
     },
   },
   // server: {
-  //   host: true, // 👈 allow external access (required for ngrok to work from mobile)
+  //   host: true, // allow external access (mobile)
   //   proxy: {
   //     "/api": {
-  //       target: "http://localhost:3000", // backend
+  //       target: "http://localhost:3000", // local backend
   //       changeOrigin: true,
-  //       rewrite: (path) => path.replace(/^\/api/, ""),
   //     },
   //   },
   //   allowedHosts: [
-  //     "f3b58e3cdfec.ngrok-free.app", // replace with your current ngrok domain
+  //     "dff9d0f76783.ngrok-free.app", // optional (for Vite v5+)
   //   ],
   // },
 });
