@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { useReactMediaRecorder } from "react-media-recorder";
 import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -26,7 +25,11 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [showProcessingDialog, setShowProcessingDialog] = useState(false);
 
   const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const chunkIntervalRef = useRef(null);
   const timerRef = useRef(null);
+  const activeRecorderRef = useRef(null);
+
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
@@ -42,11 +45,11 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const uploadChunkMutation = useMutation({
     mutationFn: (blob) => {
       const form = new FormData();
-      form.append("video", blob, "video.webm");
+      form.append("video", blob, "chunk.webm");
       return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
     onError: () => {
-      toast.error("Video upload failed");
+      toast.error("Chunk upload failed");
     },
   });
 
@@ -57,6 +60,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         frameColor,
       }),
     onSuccess: () => {
+      // toast.success("Video merged successfully");
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
     },
     onError: () => {
@@ -64,54 +68,151 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     },
   });
 
-  const {
-    status,
-    startRecording,
-    stopRecording,
-    mediaBlobUrl,
-    previewStream,
-    clearBlobUrl,
-  } = useReactMediaRecorder({
-    video: {
-      facingMode: "user",
-      width: orientation === "portrait" ? 480 : 1280,
-      height: orientation === "portrait" ? 640 : 720,
-    },
-    audio: true,
-    onStop: (blobUrl, blob) => {
-      uploadChunkMutation.mutate(blob);
-    },
-  });
+  const startChunkRecording = () => {
+    if (!streamRef.current) return;
 
-  useEffect(() => {
-    if (previewStream && videoRef.current) {
-      videoRef.current.srcObject = previewStream;
-      videoRef.current.play();
-    }
-  }, [previewStream]);
+    const options = MediaRecorder.isTypeSupported("video/webm")
+      ? { mimeType: "video/webm" }
+      : {};
 
-  const handleStart = () => {
-    if (doctor?.isVideoProcessing) {
-      setShowProcessingDialog(true);
+    let recorder;
+    try {
+      recorder = new MediaRecorder(streamRef.current, options);
+    } catch (err) {
+      toast.error("Recording not supported on this browser");
       return;
     }
 
-    if (isRecording || countdown > 0) return;
+    const chunks = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      try {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        uploadChunkMutation.mutate(blob);
+      } catch {
+        toast.error("Failed to process video chunk");
+      }
+    };
+
+    recorder.start();
+    activeRecorderRef.current = recorder;
+
+    setTimeout(() => {
+      if (recorder.state === "recording") {
+        recorder.stop();
+      }
+      if (activeRecorderRef.current === recorder) {
+        activeRecorderRef.current = null;
+      }
+    }, 3000);
+  };
+
+  const startActualRecording = () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast.error("Your browser does not support camera access");
+      return;
+    }
 
     deleteMutation.mutate(undefined, {
       onSuccess: () => {
-        setCountdown(3);
+        // const videoConstraints = {
+        //   facingMode: "user",
+        // };
+        const videoConstraints =
+          orientation === "portrait"
+            ? {
+                facingMode: "user",
+                aspectRatio: 9 / 16, // avoid zooming
+              }
+            : {
+                facingMode: "user",
+                aspectRatio: 16 / 9,
+              };
+        navigator.mediaDevices
+          .getUserMedia({ audio: true, video: videoConstraints })
+          .then((stream) => {
+            if (!videoRef.current) {
+              toast.error("Video element not ready");
+              return;
+            }
+
+            streamRef.current = stream;
+            videoRef.current.srcObject = stream;
+            videoRef.current.play();
+
+            setIsRecording(true);
+            setTimer(0);
+
+            startChunkRecording();
+            chunkIntervalRef.current = setInterval(startChunkRecording, 3000);
+            timerRef.current = setInterval(() => {
+              setTimer((t) => t + 1);
+            }, 1000);
+          })
+          .catch((err) => {
+            console.error("getUserMedia error:", err);
+            if (err.name === "NotAllowedError") {
+              toast.error("Permission denied for camera/microphone.");
+            } else if (err.name === "NotFoundError") {
+              toast.error("No camera/microphone found.");
+            } else {
+              toast.error("Failed to access media devices.");
+            }
+          });
       },
     });
+  };
+
+  const handleStart = () => {
+    if (doctor.isVideoProcessing) {
+      // Show alert if video is still processing
+      setShowProcessingDialog(true);
+      return;
+    }
+    if (isRecording || countdown > 0) return;
+    setCountdown(3);
   };
 
   const handleStop = () => {
     if (!isRecording) return;
 
-    stopRecording();
+    setIsRecording(false);
+    clearInterval(chunkIntervalRef.current);
     clearInterval(timerRef.current);
     setTimer(0);
-    setIsRecording(false);
+
+    try {
+      if (
+        activeRecorderRef.current &&
+        activeRecorderRef.current.state === "recording"
+      ) {
+        activeRecorderRef.current.stop();
+        activeRecorderRef.current = null;
+      }
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          try {
+            track.stop();
+          } catch (err) {
+            console.warn("Track stop failed:", err);
+          }
+        });
+        streamRef.current = null;
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    } catch (err) {
+      console.error("Stop recording cleanup failed:", err);
+    }
 
     setTimeout(() => {
       finishMutation.mutate({ orientation, frameColor });
@@ -126,12 +227,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       setCountdown((prev) => {
         if (prev === 1) {
           clearInterval(interval);
-          startRecording();
-          setIsRecording(true);
-          setTimer(0);
-          timerRef.current = setInterval(() => {
-            setTimer((t) => t + 1);
-          }, 1000);
+          startActualRecording();
         }
         return prev - 1;
       });
@@ -141,9 +237,23 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
   useEffect(() => {
     return () => {
+      clearInterval(chunkIntervalRef.current);
       clearInterval(timerRef.current);
+
+      try {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((t) => t.stop());
+        }
+      } catch (err) {
+        console.warn("Cleanup error on unmount:", err);
+      }
     };
   }, []);
+
+  const formatTime = (sec) =>
+    `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(
+      sec % 60
+    ).padStart(2, "0")}`;
 
   useEffect(() => {
     const handleOrientation = () => {
@@ -157,11 +267,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       window.removeEventListener("orientationchange", handleOrientation);
     };
   }, []);
-
-  const formatTime = (sec) =>
-    `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(
-      sec % 60
-    ).padStart(2, "0")}`;
 
   return (
     <>
@@ -222,7 +327,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
             style={{
               aspectRatio: orientation === "portrait" ? "9 / 16" : "16 / 9",
               maxHeight: "80vh",
-              backgroundColor: frameColor,
             }}
           >
             <video

@@ -19,7 +19,7 @@ export default defineConfig({
   //     },
   //   },
   //   allowedHosts: [
-  //     "dff9d0f76783.ngrok-free.app", // optional (for Vite v5+)
+  //     "3e416f531b2e.ngrok-free.app", // optional (for Vite v5+)
   //   ],
   // },
 });

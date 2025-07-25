@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Smartphone, Monitor, CirclePlay, CircleStop } from "lucide-react";
 
+const isVideoEditingEnabled = import.meta.env.VITE_EDIT_VIDEO === "true";
+
 function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [orientation, setOrientation] = useState("portrait");
   const [isRecording, setIsRecording] = useState(false);
@@ -37,9 +39,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       axios.delete(`${backendUrl}doctors/record/${uuid}/cleanup`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] }),
-    onError: (e) => {
-      console.error("Delete error:", e);
-    },
+    onError: (e) => console.error("Delete error:", e),
   });
 
   const uploadChunkMutation = useMutation({
@@ -48,9 +48,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       form.append("video", blob, "chunk.webm");
       return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
-    onError: () => {
-      toast.error("Chunk upload failed");
-    },
+    onError: () => toast.error("Chunk upload failed"),
   });
 
   const finishMutation = useMutation({
@@ -60,12 +58,9 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
         frameColor,
       }),
     onSuccess: () => {
-      // toast.success("Video merged successfully");
       queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
     },
-    onError: () => {
-      toast.error("Video merge failed");
-    },
+    onError: () => toast.error("Video merge failed"),
   });
 
   const startChunkRecording = () => {
@@ -104,12 +99,9 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     activeRecorderRef.current = recorder;
 
     setTimeout(() => {
-      if (recorder.state === "recording") {
-        recorder.stop();
-      }
-      if (activeRecorderRef.current === recorder) {
+      if (recorder.state === "recording") recorder.stop();
+      if (activeRecorderRef.current === recorder)
         activeRecorderRef.current = null;
-      }
     }, 3000);
   };
 
@@ -121,19 +113,12 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
     deleteMutation.mutate(undefined, {
       onSuccess: () => {
-        // const videoConstraints = {
-        //   facingMode: "user",
-        // };
-        const videoConstraints =
-          orientation === "portrait"
-            ? {
-                facingMode: "user",
-                aspectRatio: 9 / 16, // avoid zooming
-              }
-            : {
-                facingMode: "user",
-                aspectRatio: 16 / 9,
-              };
+        const videoConstraints = isVideoEditingEnabled
+          ? orientation === "portrait"
+            ? { facingMode: "user", aspectRatio: 9 / 16 }
+            : { facingMode: "user", aspectRatio: 16 / 9 }
+          : { facingMode: "user" };
+
         navigator.mediaDevices
           .getUserMedia({ audio: true, video: videoConstraints })
           .then((stream) => {
@@ -151,9 +136,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
             startChunkRecording();
             chunkIntervalRef.current = setInterval(startChunkRecording, 3000);
-            timerRef.current = setInterval(() => {
-              setTimer((t) => t + 1);
-            }, 1000);
+            timerRef.current = setInterval(() => setTimer((t) => t + 1), 1000);
           })
           .catch((err) => {
             console.error("getUserMedia error:", err);
@@ -171,7 +154,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
   const handleStart = () => {
     if (doctor.isVideoProcessing) {
-      // Show alert if video is still processing
       setShowProcessingDialog(true);
       return;
     }
@@ -188,28 +170,15 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     setTimer(0);
 
     try {
-      if (
-        activeRecorderRef.current &&
-        activeRecorderRef.current.state === "recording"
-      ) {
+      if (activeRecorderRef.current?.state === "recording") {
         activeRecorderRef.current.stop();
         activeRecorderRef.current = null;
       }
 
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => {
-          try {
-            track.stop();
-          } catch (err) {
-            console.warn("Track stop failed:", err);
-          }
-        });
-        streamRef.current = null;
-      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
+      if (videoRef.current) videoRef.current.srcObject = null;
     } catch (err) {
       console.error("Stop recording cleanup failed:", err);
     }
@@ -217,7 +186,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     setTimeout(() => {
       finishMutation.mutate({ orientation, frameColor });
       setShowSuccessDialog(true);
-      if (onVideoSuccess) onVideoSuccess();
+      onVideoSuccess?.();
     }, 2000);
   };
 
@@ -239,23 +208,17 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     return () => {
       clearInterval(chunkIntervalRef.current);
       clearInterval(timerRef.current);
-
       try {
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((t) => t.stop());
-        }
+        streamRef.current?.getTracks().forEach((t) => t.stop());
       } catch (err) {
         console.warn("Cleanup error on unmount:", err);
       }
     };
   }, []);
 
-  const formatTime = (sec) =>
-    `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(
-      sec % 60
-    ).padStart(2, "0")}`;
-
   useEffect(() => {
+    if (!isVideoEditingEnabled) return;
+
     const handleOrientation = () => {
       const o = window.orientation;
       if (o === 90 || o === -90) {
@@ -268,59 +231,68 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     };
   }, []);
 
+  const formatTime = (sec) =>
+    `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(
+      sec % 60
+    ).padStart(2, "0")}`;
+
   return (
     <>
       {!isVideoCompleted && (
         <div className="p-6 bg-slate-100 shadow rounded flex flex-col items-center relative">
-          <div className="w-full mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Frame Color
-            </label>
-            <div className="flex gap-3 w-full">
-              {["#c0fbfd", "#f18bb9", "#ffede4", "#f2d9ef", "#fdf1c9"].map(
-                (color) => {
-                  const isSelected = frameColor === color;
-                  return (
-                    <div
-                      key={color}
-                      className={`flex-1 h-12 rounded-md ${
-                        isSelected ? "border-2 border-black p-0.5" : ""
-                      }`}
-                    >
-                      <button
-                        onClick={() => setFrameColor(color)}
-                        className="w-full h-full rounded-md transition"
-                        style={{ backgroundColor: color }}
-                        type="button"
-                        disabled={isRecording}
-                      />
-                    </div>
-                  );
-                }
-              )}
-            </div>
-          </div>
+          {isVideoEditingEnabled && (
+            <>
+              <div className="w-full mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Frame Color
+                </label>
+                <div className="flex gap-3 w-full">
+                  {["#c0fbfd", "#f18bb9", "#ffede4", "#f2d9ef", "#fdf1c9"].map(
+                    (color) => {
+                      const isSelected = frameColor === color;
+                      return (
+                        <div
+                          key={color}
+                          className={`flex-1 h-12 rounded-md ${
+                            isSelected ? "border-2 border-black p-0.5" : ""
+                          }`}
+                        >
+                          <button
+                            onClick={() => setFrameColor(color)}
+                            className="w-full h-full rounded-md transition"
+                            style={{ backgroundColor: color }}
+                            type="button"
+                            disabled={isRecording}
+                          />
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+              </div>
 
-          <div className="mb-4 w-full border bg-muted p-1 rounded-md flex gap-1">
-            <Button
-              variant={orientation === "portrait" ? "default" : "ghost"}
-              onClick={() => setOrientation("portrait")}
-              disabled={isRecording}
-              className="flex-1 flex items-center justify-center gap-2 text-sm"
-            >
-              <Smartphone size={16} />
-              Mobile
-            </Button>
-            <Button
-              variant={orientation === "landscape" ? "default" : "ghost"}
-              onClick={() => setOrientation("landscape")}
-              disabled={isRecording}
-              className="flex-1 flex items-center justify-center gap-2 text-sm"
-            >
-              <Monitor size={16} />
-              Desktop
-            </Button>
-          </div>
+              <div className="mb-4 w-full border bg-muted p-1 rounded-md flex gap-1">
+                <Button
+                  variant={orientation === "portrait" ? "default" : "ghost"}
+                  onClick={() => setOrientation("portrait")}
+                  disabled={isRecording}
+                  className="flex-1 flex items-center justify-center gap-2 text-sm"
+                >
+                  <Smartphone size={16} />
+                  Mobile
+                </Button>
+                <Button
+                  variant={orientation === "landscape" ? "default" : "ghost"}
+                  onClick={() => setOrientation("landscape")}
+                  disabled={isRecording}
+                  className="flex-1 flex items-center justify-center gap-2 text-sm"
+                >
+                  <Monitor size={16} />
+                  Desktop
+                </Button>
+              </div>
+            </>
+          )}
 
           <div
             className={`relative w-full max-w-[400px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300`}
@@ -354,7 +326,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
             <Button
               onClick={handleStart}
               disabled={isRecording || deleteMutation.isPending}
-              variant="default"
               className="w-32 bg-green-600 hover:bg-green-700 text-white"
             >
               <CirclePlay size={18} />
