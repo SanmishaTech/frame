@@ -47,11 +47,7 @@ export const FormSchema = z.object({
   name: z
     .string()
     .min(1, "Name cannot be left blank.") // Ensuring minimum length of 2
-    .max(100, "Name must not exceed 100 characters.")
-    .refine((val) => /^[A-Za-z\s\u0900-\u097F]+$/.test(val), {
-      message: "Name can only contain letters.",
-    }),
-
+    .max(100, "Name must not exceed 100 characters."),
   email: z.string().email("Invalid email format.").min(1, "Email is required."),
   mobile: z
     .string()
