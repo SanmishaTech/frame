@@ -102,8 +102,8 @@ const DoctorList = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(10); // Add recordsPerPage state
-  const [sortBy, setSortBy] = useState("name"); // Default sort column
-  const [sortOrder, setSortOrder] = useState("asc"); // Default sort order
+  const [sortBy, setSortBy] = useState("uploadedAt"); // Default sort column
+  const [sortOrder, setSortOrder] = useState("desc"); // Default sort order
   const [search, setSearch] = useState(""); // Search query
   const [showConfirmation, setShowConfirmation] = useState(false); // State to show/hide confirmation dialog
   const [doctorToDelete, setDoctorToDelete] = useState<number | null>(null); //

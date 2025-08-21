@@ -20,7 +20,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [timer, setTimer] = useState(0);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showProcessingDialog, setShowProcessingDialog] = useState(false);
-  const [uploadSpeed, setUploadSpeed] = useState<string | null>(null); // NEW: upload speed state
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -38,31 +37,11 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     onError: (e) => console.error("Delete error:", e),
   });
 
-  // UPDATED uploadChunkMutation to measure upload speed
   const uploadChunkMutation = useMutation({
-    mutationFn: async (blob) => {
+    mutationFn: (blob) => {
       const form = new FormData();
       form.append("video", blob, "chunk.webm");
-
-      const startTime = performance.now();
-
-      // Upload chunk with axios
-      const response = await axios.post(
-        `${backendUrl}doctors/record/${uuid}`,
-        form
-      );
-
-      const endTime = performance.now();
-      const durationSec = (endTime - startTime) / 1000;
-
-      const bytesUploaded = blob.size;
-      const bitsUploaded = bytesUploaded * 8;
-      const speedBps = bitsUploaded / durationSec; // bits per second
-      const speedMbps = (speedBps / 1024 / 1024).toFixed(2);
-
-      setUploadSpeed(speedMbps); // Update upload speed state
-
-      return response;
+      return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
     onError: () => toast.error("Chunk upload failed"),
   });
@@ -138,7 +117,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
             setIsRecording(true);
             setTimer(0);
-            setUploadSpeed(null); // reset speed display when recording starts
 
             startChunkRecording();
             chunkIntervalRef.current = setInterval(startChunkRecording, 3000);
@@ -191,7 +169,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       finishMutation.mutate();
       setShowSuccessDialog(true);
       onVideoSuccess?.();
-      setUploadSpeed(null); // clear upload speed after finishing
     }, 2000);
   };
 
@@ -235,14 +212,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
             <div className="text-sm text-primary text-center mb-3">
               <div className="font-medium">{doctor.name}</div>
               <div className="text-xs">{doctor.topic}</div>
-            </div>
-          )}
-
-          {/* NEW: Upload Speed Display */}
-          {isRecording && (
-            <div className="mb-2 font-semibold text-indigo-700">
-              Upload speed:{" "}
-              {uploadSpeed !== null ? `${uploadSpeed} Mbps` : "Calculating..."}
             </div>
           )}
 
