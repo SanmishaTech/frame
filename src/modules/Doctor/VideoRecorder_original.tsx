@@ -92,7 +92,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       if (recorder.state === "recording") recorder.stop();
       if (activeRecorderRef.current === recorder)
         activeRecorderRef.current = null;
-    }, 3000);
+    }, 60000);
   };
 
   const startActualRecording = () => {
@@ -119,7 +119,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
             setTimer(0);
 
             startChunkRecording();
-            chunkIntervalRef.current = setInterval(startChunkRecording, 3000);
+            chunkIntervalRef.current = setInterval(startChunkRecording, 60000);
             timerRef.current = setInterval(() => setTimer((t) => t + 1), 1000);
           })
           .catch((err) => {
