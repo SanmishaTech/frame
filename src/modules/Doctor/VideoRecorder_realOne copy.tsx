@@ -14,12 +14,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { CirclePlay, CircleStop } from "lucide-react";
+
 function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showProcessingDialog, setShowProcessingDialog] = useState(false);
-  const [countdown, setCountdown] = useState(null);
+  const [countdown, setCountdown] = useState(null); // NEW
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -38,10 +39,9 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   });
 
   const uploadChunkMutation = useMutation({
-    mutationFn: ({ blob, filename }) => {
+    mutationFn: (blob) => {
       const form = new FormData();
-      form.append("video", blob, filename);
-      form.append("filename", filename);
+      form.append("video", blob, "chunk.webm");
       return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
     onError: () => toast.error("Chunk upload failed"),
@@ -54,18 +54,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     },
     onError: () => toast.error("Video merge failed"),
   });
-
-  // Helper to generate datetime filename
-  const generateDatetimeFilename = () => {
-    // e.g. 2025-08-21T14-33-12-123Z.webm (colons replaced by dashes)
-    return (
-      new Date()
-        .toISOString()
-        .replace(/:/g, "-")
-        .replace(/\./g, "-")
-        .replace("T", "T") + ".webm"
-    );
-  };
 
   const startChunkRecording = () => {
     if (!streamRef.current) return;
@@ -91,8 +79,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     recorder.onstop = () => {
       try {
         const blob = new Blob(chunks, { type: "video/webm" });
-        const filename = generateDatetimeFilename();
-        uploadChunkMutation.mutate({ blob, filename });
+        uploadChunkMutation.mutate(blob);
       } catch {
         toast.error("Failed to process video chunk");
       }
@@ -156,9 +143,10 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     }
     if (isRecording || countdown !== null) return;
 
-    setCountdown(3);
+    setCountdown(3); // Start countdown
   };
 
+  // Countdown effect
   useEffect(() => {
     if (countdown === null) return;
 
@@ -218,8 +206,6 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(
       sec % 60
     ).padStart(2, "0")}`;
-
-  // JSX omitted per request
 
   return (
     <>
