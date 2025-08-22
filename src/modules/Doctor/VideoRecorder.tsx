@@ -40,8 +40,9 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const uploadChunkMutation = useMutation({
     mutationFn: ({ blob, filename }) => {
       const form = new FormData();
-      form.append("video", blob, filename);
-      form.append("filename", filename);
+      form.append("filename", filename); // ⬅️ Move this before the file
+      form.append("video", blob, filename); // keep filename in third param too
+
       return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
     onError: () => toast.error("Chunk upload failed"),
