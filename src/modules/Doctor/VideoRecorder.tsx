@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { CirclePlay, CircleStop } from "lucide-react";
+
 function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
@@ -38,27 +39,18 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   });
 
   const uploadChunkMutation = useMutation({
-    mutationFn: ({ blob, filename }) => {
+    mutationFn: ({ blob, filename, stop = false }) => {
       const form = new FormData();
-      form.append("filename", filename); // ⬅️ Move this before the file
-      form.append("video", blob, filename); // keep filename in third param too
+      form.append("filename", filename);
+      form.append("video", blob, filename);
+      form.append("stop", String(stop));
 
       return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
     onError: () => toast.error("Chunk upload failed"),
   });
 
-  const finishMutation = useMutation({
-    mutationFn: () => axios.post(`${backendUrl}doctors/record/${uuid}/finish`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["doctor", uuid] });
-    },
-    onError: () => toast.error("Video merge failed"),
-  });
-
-  // Helper to generate datetime filename
   const generateDatetimeFilename = () => {
-    // e.g. 2025-08-21T14-33-12-123Z.webm (colons replaced by dashes)
     return (
       new Date()
         .toISOString()
@@ -93,7 +85,11 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       try {
         const blob = new Blob(chunks, { type: "video/webm" });
         const filename = generateDatetimeFilename();
-        uploadChunkMutation.mutate({ blob, filename });
+        uploadChunkMutation.mutate({
+          filename,
+          stop: recorder.stopFlag === true, // ✅ FINAL chunk check
+          blob,
+        });
       } catch {
         toast.error("Failed to process video chunk");
       }
@@ -157,7 +153,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     }
     if (isRecording || countdown !== null) return;
 
-    setCountdown(3);
+    setCountdown(5);
   };
 
   useEffect(() => {
@@ -186,6 +182,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
     try {
       if (activeRecorderRef.current?.state === "recording") {
+        activeRecorderRef.current.stopFlag = true; // ✅ mark final chunk
         activeRecorderRef.current.stop();
         activeRecorderRef.current = null;
       }
@@ -196,8 +193,10 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       console.error("Stop recording cleanup failed:", err);
     }
 
+    // ✅ No need to start a new recording — final chunk is already sent above
+
+    // Show success popup after 10 seconds
     setTimeout(() => {
-      finishMutation.mutate();
       setShowSuccessDialog(true);
       onVideoSuccess?.();
     }, 10000);
@@ -227,7 +226,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       {!isVideoCompleted && (
         <div className="p-6 bg-slate-100 shadow rounded flex flex-col items-center relative">
           <div
-            className="relative w-full max-w-[400px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300"
+            className="relative w-full max-w-[700px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300"
             style={{
               maxHeight: "80vh",
             }}
@@ -268,7 +267,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
             </Button>
             <Button
               onClick={handleStop}
-              disabled={!isRecording || finishMutation.isPending}
+              disabled={!isRecording}
               variant="destructive"
               className="w-32"
             >

@@ -14,13 +14,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { CirclePlay, CircleStop } from "lucide-react";
-
 function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showProcessingDialog, setShowProcessingDialog] = useState(false);
-  const [uploadSpeed, setUploadSpeed] = useState<string | null>(null); // NEW: upload speed state
+  const [countdown, setCountdown] = useState(null);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -38,31 +37,13 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     onError: (e) => console.error("Delete error:", e),
   });
 
-  // UPDATED uploadChunkMutation to measure upload speed
   const uploadChunkMutation = useMutation({
-    mutationFn: async (blob) => {
+    mutationFn: ({ blob, filename }) => {
       const form = new FormData();
-      form.append("video", blob, "chunk.webm");
+      form.append("filename", filename); // ⬅️ Move this before the file
+      form.append("video", blob, filename); // keep filename in third param too
 
-      const startTime = performance.now();
-
-      // Upload chunk with axios
-      const response = await axios.post(
-        `${backendUrl}doctors/record/${uuid}`,
-        form
-      );
-
-      const endTime = performance.now();
-      const durationSec = (endTime - startTime) / 1000;
-
-      const bytesUploaded = blob.size;
-      const bitsUploaded = bytesUploaded * 8;
-      const speedBps = bitsUploaded / durationSec; // bits per second
-      const speedMbps = (speedBps / 1024 / 1024).toFixed(2);
-
-      setUploadSpeed(speedMbps); // Update upload speed state
-
-      return response;
+      return axios.post(`${backendUrl}doctors/record/${uuid}`, form);
     },
     onError: () => toast.error("Chunk upload failed"),
   });
@@ -74,6 +55,18 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     },
     onError: () => toast.error("Video merge failed"),
   });
+
+  // Helper to generate datetime filename
+  const generateDatetimeFilename = () => {
+    // e.g. 2025-08-21T14-33-12-123Z.webm (colons replaced by dashes)
+    return (
+      new Date()
+        .toISOString()
+        .replace(/:/g, "-")
+        .replace(/\./g, "-")
+        .replace("T", "T") + ".webm"
+    );
+  };
 
   const startChunkRecording = () => {
     if (!streamRef.current) return;
@@ -99,21 +92,21 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
     recorder.onstop = () => {
       try {
         const blob = new Blob(chunks, { type: "video/webm" });
-        uploadChunkMutation.mutate(blob);
+        const filename = generateDatetimeFilename();
+        uploadChunkMutation.mutate({ blob, filename });
       } catch {
         toast.error("Failed to process video chunk");
       }
     };
 
     recorder.start();
-
     activeRecorderRef.current = recorder;
 
     setTimeout(() => {
       if (recorder.state === "recording") recorder.stop();
       if (activeRecorderRef.current === recorder)
         activeRecorderRef.current = null;
-    }, 3000);
+    }, 20000);
   };
 
   const startActualRecording = () => {
@@ -138,10 +131,9 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
 
             setIsRecording(true);
             setTimer(0);
-            setUploadSpeed(null); // reset speed display when recording starts
 
             startChunkRecording();
-            chunkIntervalRef.current = setInterval(startChunkRecording, 3000);
+            chunkIntervalRef.current = setInterval(startChunkRecording, 20000);
             timerRef.current = setInterval(() => setTimer((t) => t + 1), 1000);
           })
           .catch((err) => {
@@ -163,9 +155,26 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       setShowProcessingDialog(true);
       return;
     }
-    if (isRecording) return;
-    startActualRecording();
+    if (isRecording || countdown !== null) return;
+
+    setCountdown(5);
   };
+
+  useEffect(() => {
+    if (countdown === null) return;
+
+    if (countdown === 0) {
+      setCountdown(null);
+      startActualRecording();
+      return;
+    }
+
+    const countdownInterval = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(countdownInterval);
+  }, [countdown]);
 
   const handleStop = () => {
     if (!isRecording) return;
@@ -191,8 +200,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       finishMutation.mutate();
       setShowSuccessDialog(true);
       onVideoSuccess?.();
-      setUploadSpeed(null); // clear upload speed after finishing
-    }, 2000);
+    }, 10000);
   };
 
   useEffect(() => {
@@ -212,12 +220,14 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       sec % 60
     ).padStart(2, "0")}`;
 
+  // JSX omitted per request
+
   return (
     <>
       {!isVideoCompleted && (
         <div className="p-6 bg-slate-100 shadow rounded flex flex-col items-center relative">
           <div
-            className="relative w-full max-w-[400px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300"
+            className="relative w-full max-w-[700px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300"
             style={{
               maxHeight: "80vh",
             }}
@@ -229,6 +239,13 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
               playsInline
               className="w-full h-full object-contain bg-black"
             />
+            {countdown !== null && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="text-white text-[8rem] font-extrabold animate-pulse drop-shadow-lg">
+                  {countdown}
+                </div>
+              </div>
+            )}
           </div>
 
           {doctor && (
@@ -238,18 +255,12 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
             </div>
           )}
 
-          {/* NEW: Upload Speed Display */}
-          {isRecording && (
-            <div className="mb-2 font-semibold text-indigo-700">
-              Upload speed:{" "}
-              {uploadSpeed !== null ? `${uploadSpeed} Mbps` : "Calculating..."}
-            </div>
-          )}
-
           <div className="flex gap-4 mt-2">
             <Button
               onClick={handleStart}
-              disabled={isRecording || deleteMutation.isPending}
+              disabled={
+                isRecording || deleteMutation.isPending || countdown !== null
+              }
               className="w-32 bg-green-600 hover:bg-green-700 text-white"
             >
               <CirclePlay size={18} />
