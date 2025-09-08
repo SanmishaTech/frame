@@ -13,7 +13,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { CirclePlay, CircleStop } from "lucide-react";
+import { CirclePlay, CircleStop, CircleCheck } from "lucide-react";
 
 function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -224,7 +224,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
   return (
     <>
       {!isVideoCompleted && (
-        <div className="p-6 bg-slate-100 shadow rounded flex flex-col items-center relative">
+        <div className="p-6 bg-gray-100 shadow rounded flex flex-col items-center relative">
           <div
             className="relative w-full max-w-[700px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300"
             style={{
@@ -260,18 +260,18 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
               disabled={
                 isRecording || deleteMutation.isPending || countdown !== null
               }
-              className="w-32 bg-green-600 hover:bg-green-700 text-white"
+              className="flex items-center justify-center w-32 bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-white font-medium rounded-lg py-2 px-4 hover:from-green-500 hover:via-green-600 hover:to-green-700 focus:ring-4 focus:ring-green-300 transition-all"
             >
-              <CirclePlay size={18} />
+              <CirclePlay size={18} className="mr-2" />
               Start
             </Button>
             <Button
               onClick={handleStop}
               disabled={!isRecording}
               variant="destructive"
-              className="w-32"
+              className="flex items-center justify-center w-32 bg-gradient-to-r from-red-400 via-red-500 to-red-600 text-white font-medium rounded-lg py-2 px-4 hover:from-red-500 hover:via-red-600 hover:to-red-700 focus:ring-4 focus:ring-red-300 transition-all"
             >
-              <CircleStop size={18} />
+              <CircleCheck size={18} className="mr-2" />
               Finish
             </Button>
           </div>

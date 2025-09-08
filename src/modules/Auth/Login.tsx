@@ -13,7 +13,7 @@ import { appName, allowRegistration } from "@/config";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import Validate from "@/lib/Handlevalidation";
-import logo from "../../assets/logo.jpeg";
+import logo from "../../../public/logo.jpeg";
 
 interface BackendErrorResponse {
   errors: Array<{
