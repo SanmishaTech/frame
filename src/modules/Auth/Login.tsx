@@ -117,93 +117,91 @@ const Login = () => {
   const isLoading = loginMutation.isPending;
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white px-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 md:p-8 text-gray-900">
-        {/* Logo at top */}
-        <div className="flex justify-center mb-6">
-          <img src={logo} alt="Logo" className="h-16 w-auto object-contain" />
-        </div>
+    <div>
+      {/* Logo at top */}
+      <div className="flex justify-center mb-2">
+        <img src={logo} alt="Logo" className="h-16 w-auto object-contain" />
+      </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex flex-col gap-6">
-            {/* Header */}
-            <div className="flex flex-col items-center text-center">
-              <h1 className="text-2xl font-bold">Welcome back</h1>
-              <p className="text-sm text-gray-500">
-                Login to your {appName} account
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="flex flex-col gap-6">
+          {/* Header */}
+          <div className="flex flex-col items-center text-center">
+            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <p className="text-sm text-gray-500">
+              Login to your {appName} account
+            </p>
+          </div>
+
+          {/* Email Field */}
+          <div className="grid gap-2 relative pb-3">
+            <Label htmlFor="email">Email</Label>
+            <Controller
+              name="email"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  {...field}
+                  disabled={isLoading}
+                  aria-invalid={errors.email ? "true" : "false"}
+                />
+              )}
+            />
+            {errors.email && (
+              <p className="text-destructive text-xs absolute -bottom-1 left-0">
+                {errors.email.message}
               </p>
-            </div>
-
-            {/* Email Field */}
-            <div className="grid gap-2 relative pb-3">
-              <Label htmlFor="email">Email</Label>
-              <Controller
-                name="email"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    {...field}
-                    disabled={isLoading}
-                    aria-invalid={errors.email ? "true" : "false"}
-                  />
-                )}
-              />
-              {errors.email && (
-                <p className="text-destructive text-xs absolute -bottom-1 left-0">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-
-            {/* Password Field */}
-            <div className="grid gap-2 relative pb-3">
-              <Label htmlFor="password">Password</Label>
-              <Controller
-                name="password"
-                control={control}
-                render={({ field }) => (
-                  <PasswordInput
-                    id="password"
-                    {...field}
-                    disabled={isLoading}
-                    aria-invalid={errors.password ? "true" : "false"}
-                  />
-                )}
-              />
-              {errors.password && (
-                <p className="text-destructive text-xs absolute -bottom-1 left-0">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            {/* Submit Button */}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                  Logging in...
-                </>
-              ) : (
-                "Login"
-              )}
-            </Button>
-
-            {/* Registration Link */}
-            {allowRegistration && (
-              <div className="text-center text-sm text-gray-600">
-                Don’t have an account?{" "}
-                <a href="/register" className="underline underline-offset-4">
-                  Register
-                </a>
-              </div>
             )}
           </div>
-        </form>
-      </div>
+
+          {/* Password Field */}
+          <div className="grid gap-2 relative pb-3">
+            <Label htmlFor="password">Password</Label>
+            <Controller
+              name="password"
+              control={control}
+              render={({ field }) => (
+                <PasswordInput
+                  id="password"
+                  {...field}
+                  disabled={isLoading}
+                  aria-invalid={errors.password ? "true" : "false"}
+                />
+              )}
+            />
+            {errors.password && (
+              <p className="text-destructive text-xs absolute -bottom-1 left-0">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                Logging in...
+              </>
+            ) : (
+              "Login"
+            )}
+          </Button>
+
+          {/* Registration Link */}
+          {allowRegistration && (
+            <div className="text-center text-sm text-gray-600">
+              Don’t have an account?{" "}
+              <a href="/register" className="underline underline-offset-4">
+                Register
+              </a>
+            </div>
+          )}
+        </div>
+      </form>
     </div>
   );
 };
