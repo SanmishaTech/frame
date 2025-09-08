@@ -2,25 +2,18 @@ import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get } from "@/services/apiService";
+import logo from "../../assets/logo.jpeg";
 import {
   Loader,
-  Mail,
-  Phone,
   UserRound,
-  HeartPulse,
-  BookOpenText,
+  ShieldCheck,
   VideoIcon,
   CircleCheck,
-  Play,
-  StopCircle,
   CircleDot,
-  ShieldCheck,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import VideoRecorder from "./VideoRecorder";
-import { Button } from "@/components/ui/button";
 
 const fetchDoctorByUUID = async (uuid: string) => {
   return await get(`/doctors/record/${uuid}`);
@@ -42,7 +35,7 @@ const PublicDoctorPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-[#f1f5f9]">
+      <div className="flex justify-center items-center h-screen bg-gray-100">
         <Loader className="animate-spin text-primary" />
       </div>
     );
@@ -50,8 +43,8 @@ const PublicDoctorPage = () => {
 
   if (isError || !doctor) {
     return (
-      <div className="flex justify-center items-center h-screen bg-[#f1f5f9] px-4">
-        <div className="text-center text-destructive text-lg font-semibold">
+      <div className="flex justify-center items-center h-screen bg-gray-100 px-4">
+        <div className="text-center text-red-600 text-lg font-semibold">
           Doctor not found.
         </div>
       </div>
@@ -59,46 +52,88 @@ const PublicDoctorPage = () => {
   }
 
   return (
-    <div className="bg-[#f9fafb] py-4 px-4 min-h-screen flex justify-center items-center">
-      <div className="max-w-6xl w-full">
-        <Card className="shadow-2xl border border-gray-200 bg-white dark:bg-zinc-900">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-primary flex justify-center items-center gap-2">
-              <UserRound className="text-primary" size={28} />
-              Welcome, {doctor.name} {`(${doctor.degree})`}
-            </CardTitle>
-            <h2 className="text-lg font-semibold text-primary mt-2">
-              Topic: {doctor.topic}
-            </h2>
+    <div className="bg-gray-100 min-h-screen">
+      {/* Navbar */}
+      {/* Navbar */}
+      {/* Navbar */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto flex items-center justify-between h-24 px-4 md:px-6">
+          {/* Mobile: Centered logo */}
+          <div className="block md:hidden mx-auto">
+            <img src={logo} alt="Logo" className="h-16 w-auto object-contain" />
+          </div>
 
-            <p className="text-muted-foreground mt-1 text-sm">
-              Please record and submit a brief video on the given topic by
-              following the instructions on this page.
-            </p>
-            <div className="mt-2 flex justify-center items-center gap-2 text-sm text-red-600 font-medium">
-              <ShieldCheck size={18} className="text-red-500" />
-              <span>
-                Important: Please do not share this link with anyone. It is
-                meant solely for your use and should be kept confidential.
-              </span>
+          {/* Desktop: Logo on left, name on right */}
+          <div className="hidden md:flex items-center w-full justify-between">
+            <div>
+              <img
+                src={logo}
+                alt="Logo"
+                className="h-20 w-auto object-contain"
+              />
             </div>
-          </CardHeader>
+            <div className="text-right">
+              <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2 justify-end">
+                <UserRound className="text-primary" size={24} />
+                {doctor.name}
+                <span className="text-sm font-normal text-gray-600">
+                  ({doctor.degree})
+                </span>
+              </h1>
+              <h2 className="text-sm font-semibold text-gray-700">
+                Topic: {doctor.topic}
+              </h2>
+            </div>
+          </div>
+        </div>
+      </header>
 
-          <Separator />
+      {/* Mobile: Name + Topic */}
+      <div className="block md:hidden px-4 py-3 border-b border-gray-200 bg-white">
+        <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <UserRound className="text-primary" size={20} />
+          {doctor.name}
+          <span className="text-sm font-normal text-gray-600">
+            ({doctor.degree})
+          </span>
+        </h1>
+        <h2 className="text-sm font-semibold text-gray-700 mt-1">
+          Topic: {doctor.topic}
+        </h2>
+      </div>
 
-          <CardContent className="mt-4">
-            <div className="w-full space-y-3">
+      {/* Main Content */}
+      <main className="py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <Card className="shadow-lg border border-gray-200 bg-white rounded-lg">
+            <CardHeader className="px-6 pt-6 text-left">
+              <p className="text-gray-700 text-base">
+                Please record and submit a brief video on the given topic by
+                following the instructions on this page.
+              </p>
+              <div className="mt-3 flex items-center gap-2 text-sm text-red-600 font-medium">
+                <ShieldCheck size={18} className="text-red-500" />
+                <span>
+                  Important: Do not share this link with anyone. It's
+                  confidential and for your use only.
+                </span>
+              </div>
+            </CardHeader>
+
+            <Separator />
+
+            <CardContent className="px-6 py-6">
               {!isVideoCompleted ? (
                 <>
-                  <h3 className="text-xl font-semibold text-secondary-foreground flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">
                     <VideoIcon className="text-red-500" size={22} />
                     Record Your Video Message
                   </h3>
 
-                  <div className="mb-6 p-4 rounded-md bg-yellow-100 border border-yellow-300 text-yellow-900 text-sm">
+                  <div className="mb-6 p-4 rounded-md bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
                     <h4 className="font-semibold text-base mb-2 flex items-center gap-2">
                       <CircleDot className="text-yellow-700" size={18} />
-                      Instructions for Recording Your Video
+                      Instructions
                     </h4>
                     <ol className="list-decimal pl-5 space-y-2">
                       <li>
@@ -106,59 +141,46 @@ const PublicDoctorPage = () => {
                         recording.
                       </li>
                       <li>
-                        When prompted, allow your browser to access your{" "}
-                        <strong>camera</strong> and <strong>microphone</strong>.
+                        Allow camera & microphone permissions when prompted.
                       </li>
                       <li>
-                        Your video recording will begin immediately after
-                        permissions are granted.
+                        Recording starts right after permission is granted.
                       </li>
                       <li>
-                        Click the <strong>Finish</strong> button to stop the
-                        recording and upload the video.
-                      </li>
-                      {/* <li>
-                        You can record a second video after{" "}
-                        <strong>30 minutes</strong> from your previous
-                        recording.
-                      </li> */}
-                      <li>
-                        Wait for the upload to complete. A success message will
-                        be shown once it's done.
+                        Click <strong>Finish</strong> to stop and upload your
+                        video.
                       </li>
                       <li>
-                        You can use external microphone or lighting to record
-                        your video.
+                        Wait until the upload finishes. You'll see a success
+                        message.
                       </li>
                       <li>
-                        Your video should be 1 to 3 minutes long in duration.
+                        You may use an external mic or light for better quality.
                       </li>
+                      <li>Keep your video between 1 to 3 minutes.</li>
                     </ol>
                   </div>
                 </>
               ) : (
-                <>
-                  <div className="mb-6 p-4 rounded-md bg-green-100 border border-green-300 text-green-900 text-sm">
-                    <h4 className="font-semibold text-base mb-2 flex items-center gap-2">
-                      <CircleCheck className="text-green-700" size={18} />
-                      Video Uploaded Successfully.
-                    </h4>
-                    <p className="text-green-800">
-                      Your video has been successfully recorded and uploaded.
-                    </p>
-                  </div>
-                </>
+                <div className="mb-6 p-4 rounded-md bg-green-50 border border-green-200 text-green-900 text-sm">
+                  <h4 className="font-semibold text-base mb-2 flex items-center gap-2">
+                    <CircleCheck className="text-green-700" size={18} />
+                    Video Uploaded Successfully
+                  </h4>
+                  <p>Your video has been successfully recorded and uploaded.</p>
+                </div>
               )}
+
               <VideoRecorder
                 uuid={uuid}
                 doctor={doctor}
-                onVideoSuccess={() => setIsVideoCompleted(true)} // callback passed here
-                isVideoCompleted={isVideoCompleted} // pass the state to VideoRecorder
+                onVideoSuccess={() => setIsVideoCompleted(true)}
+                isVideoCompleted={isVideoCompleted}
               />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 };
