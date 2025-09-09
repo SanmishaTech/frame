@@ -226,7 +226,7 @@ function VideoRecorder({ uuid, doctor, onVideoSuccess, isVideoCompleted }) {
       {!isVideoCompleted && (
         <div className="p-6 bg-gray-100 shadow rounded flex flex-col items-center relative">
           <div
-            className="relative w-full max-w-[700px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300"
+            className="relative w-full w-[300px] h-[433px] md:w-[600px] md:h-[300px] mb-4 rounded-lg overflow-hidden shadow-md border border-gray-300"
             style={{
               maxHeight: "80vh",
             }}
