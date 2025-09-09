@@ -200,6 +200,13 @@ const Login = () => {
               </a>
             </div>
           )}
+          <div className="text-center text-xs text-gray-500 mt-1">
+            Need help? Refer to the{" "}
+            <a href="/help/user-manual" className="underline">
+              User Manual
+            </a>
+            .
+          </div>
         </div>
       </form>
     </div>

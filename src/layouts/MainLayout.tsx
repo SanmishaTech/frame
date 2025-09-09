@@ -159,6 +159,32 @@ export default function MainLayout() {
 
               <div>
                 <div className="flex items-center gap-2 w-full justify-between">
+                  {/* <button className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-3 rounded-full shadow-lg hover:scale-105 transition-transform duration-300 hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300">
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M8 10h.01M12 14v.01M12 12a4 4 0 100-8 4 4 0 000 8zm0 0v2m0 4h.01"
+                      />
+                    </svg>
+                    Help
+                  </button> */}
+                  <Button
+                    onClick={() => navigate("/help/user-manual")}
+                    // className="dark:bg-yellow dark:text-black bg-yellow-500 cursor-pointer"
+                    // variant="outline"
+                    // size="icon"
+                    aria-label="Toggle Dark Mode"
+                  >
+                    Help
+                  </Button>
+
                   {/* Dark Mode Switcher */}
                   <Button
                     onClick={toggleDarkMode}

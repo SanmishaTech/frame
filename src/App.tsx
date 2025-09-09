@@ -28,7 +28,13 @@ import DoctorReport from "./modules/Report/doctorReport";
 import PublicDoctorPage from "./modules/Doctor/PublicDoctorPage";
 import GuestRoute from "./components/common/guest-route";
 import { TooltipProvider } from "@/components/ui/tooltip";
-
+import UserManual from "./modules/Help/UserManual/UserManual";
+import UserManualPage1 from "./modules/Help/UserManual/UserManualPage1";
+import UserManualPage2 from "./modules/Help/UserManual/UserManualPage2";
+import UserManualPage3 from "./modules/Help/UserManual/UserManualPage3";
+import UserManualPage4 from "./modules/Help/UserManual/UserManualPage4";
+import UserManualPage5 from "./modules/Help/UserManual/UserManualPage5";
+import UserManualPage6 from "./modules/Help/UserManual/UserManualPage6";
 const App = () => {
   useEffect(() => {
     document.title = appName; // Set the document title
@@ -122,6 +128,31 @@ const App = () => {
                   <PublicDoctorPage />
                 </GuestRoute>
               }
+            />
+            <Route path="/help/user-manual" element={<UserManual />} />
+            <Route
+              path="/help/user-manual/page-1"
+              element={<UserManualPage1 />}
+            />
+            <Route
+              path="/help/user-manual/page-2"
+              element={<UserManualPage2 />}
+            />
+            <Route
+              path="/help/user-manual/page-3"
+              element={<UserManualPage3 />}
+            />
+            <Route
+              path="/help/user-manual/page-4"
+              element={<UserManualPage4 />}
+            />
+            <Route
+              path="/help/user-manual/page-5"
+              element={<UserManualPage5 />}
+            />
+            <Route
+              path="/help/user-manual/page-6"
+              element={<UserManualPage6 />}
             />
           </Routes>
         </Router>
